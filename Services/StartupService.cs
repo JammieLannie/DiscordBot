@@ -10,7 +10,7 @@ namespace DiscordBot.Services
 {
     public class StartupService
     {
-        private static IServiceProvider _provider;
+        private readonly IServiceProvider _provider;
         private readonly CommandService _commands;
         private readonly IConfigurationRoot _config;
         private readonly DiscordSocketClient _discord;

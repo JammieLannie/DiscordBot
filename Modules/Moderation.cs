@@ -7,6 +7,7 @@ using Discord.WebSocket;
 
 namespace DiscordBot.Modules
 {
+    [Summary(":shield:")]
     public class Moderation : ModuleBase
     {
         [Command("purge")]
@@ -80,11 +81,11 @@ namespace DiscordBot.Modules
         [RequireBotPermission(GuildPermission.BanMembers)]
         public async Task Ban(IGuildUser userAccount)
         {
-            var message = Context.Message;
-
-            await Context.Channel.DeleteMessageAsync(message).ConfigureAwait(false);
+            await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
             var user = Context.User as SocketGuildUser;
+            
+            if (user == null) return;
 
             if (user.GuildPermissions.BanMembers)
             {
@@ -114,9 +115,7 @@ namespace DiscordBot.Modules
         [Command("verify")]
         public async Task RoleTask()
         {
-            var message = Context.Message;
-
-            await Context.Channel.DeleteMessageAsync(message).ConfigureAwait(false);
+            await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
             var roleId = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToString() == "Verified");
 
@@ -133,9 +132,7 @@ namespace DiscordBot.Modules
         [RequireBotPermission(GuildPermission.ManageRoles)]
         public async Task UnMute(IGuildUser user)
         {
-            var message = Context.Message;
-
-            await Context.Channel.DeleteMessageAsync(message).ConfigureAwait(false);
+            await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
             /*
             var builder = new EmbedBuilder()
@@ -149,7 +146,7 @@ namespace DiscordBot.Modules
             await Context.Channel.SendMessageAsync(null, false, embed);
             */
 
-            var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToString() == "Muted");
+            var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("muted"));
 
             await user.RemoveRoleAsync(role);
         }
@@ -176,7 +173,7 @@ namespace DiscordBot.Modules
             await Context.Channel.SendMessageAsync(null, false, embed);
             */
 
-            var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToString() == "Muted");
+            var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("muted"));
 
             await user.AddRoleAsync(role);
         }

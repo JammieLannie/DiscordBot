@@ -8,13 +8,12 @@ namespace DiscordBot.Services
 {
     public class CommandHandler
     {
-        private static IServiceProvider _provider;
-        private static DiscordSocketClient _discord;
-        private static CommandService _commands;
-        private static IConfigurationRoot _config;
+        private readonly IServiceProvider _provider;
+        private readonly DiscordSocketClient _discord;
+        private readonly CommandService _commands;
+        private readonly IConfigurationRoot _config;
 
-        public CommandHandler(DiscordSocketClient discord, CommandService commands, IConfigurationRoot config,
-            IServiceProvider provider)
+        public CommandHandler(DiscordSocketClient discord, CommandService commands, IConfigurationRoot config, IServiceProvider provider)
         {
             _provider = provider;
             _config = config;

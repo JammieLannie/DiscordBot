@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -10,8 +11,15 @@ using Newtonsoft.Json.Linq;
 
 namespace DiscordBot.Modules
 {
+    [Summary(":woman_in_motorized_wheelchair:")]
     public class General : ModuleBase
     {
+        private readonly CommandService _commands;
+
+        public General(CommandService commands)
+        {
+            _commands = commands;
+        }
         [Command("Ping", true)]
         public async Task Ping()
         {
@@ -19,6 +27,39 @@ namespace DiscordBot.Modules
             await Context.Channel.SendMessageAsync("Bonk bonk the bot with " + Context.Message.CreatedAt.Millisecond + "ms");
         }
 
+        [Command("help", true), Alias("helpme")]
+        public async Task Help([Remainder]string arg = null)
+        {
+            await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
+            var builder = new EmbedBuilder()
+                .WithTitle("Help me please")
+                .WithDescription($"You can use `*help <cmd/catalog>!`")
+                .WithFooter(_commands.Commands.Count() + " commands", Context.Client.CurrentUser.GetAvatarUrl());
+            if (arg == null)
+            {
+                foreach (var module in _commands.Modules)
+                    builder.AddField( $"{module.Summary} {module.Name}",  $"{module.Commands.Count} commands", true);
+                await Context.Channel.SendMessageAsync(null, false, builder.Build());
+                return;
+            }
+            arg = arg.ToLower();
+            var m = _commands.Modules.FirstOrDefault(c => c.Name.ToLower().Equals(arg));
+            if (m == null) {
+                var cmd = _commands.Commands.FirstOrDefault(c => c.Name.ToLower().Equals(arg));
+                if (cmd == null) {
+                    await Context.Channel.SendMessageAsync($"Not found command/catalog `{CultureInfo.CurrentCulture.TextInfo.ToTitleCase(arg)}`");
+                    return;
+                }
+                builder.WithDescription("Description: " + (cmd.Summary ?? "No description")).WithTitle($"Help for: {cmd.Name}");
+                await Context.Channel.SendMessageAsync(null, false, builder.Build());
+                return;
+            }
+            foreach (var cmd in m.Commands)
+                builder.AddField( $"*{cmd.Name}",  cmd.Summary ?? "No description", true);
+            builder.WithFooter(m.Commands.Count + " commands", Context.Client.CurrentUser.GetAvatarUrl());
+            await Context.Channel.SendMessageAsync(null, false, builder.Build());
+        }
+        
         [Command("info", true)]
         public async Task Info()
         {
@@ -60,7 +101,7 @@ namespace DiscordBot.Modules
         }
 
         [Command("mech", true), Alias("reddit")]
-        public async Task MechanicalKeyboards(string subreddit)
+        public async Task MechanicalKeyboards(string subreddit = null)
         {
             var client = new HttpClient();
             var result =
