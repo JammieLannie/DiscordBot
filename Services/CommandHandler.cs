@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Reflection;
 using System.Threading.Tasks;
-using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -10,12 +8,11 @@ namespace DiscordBot.Services
 {
     public class CommandHandler
     {
-        public static IServiceProvider _provider;
-        public static DiscordSocketClient _discord;
-        public static CommandService _commands;
-        public static IConfigurationRoot _config;
+        private static IServiceProvider _provider;
+        private static DiscordSocketClient _discord;
+        private static CommandService _commands;
+        private static IConfigurationRoot _config;
 
-        // Retrieve client and CommandService instance via ctor
         public CommandHandler(DiscordSocketClient discord, CommandService commands, IConfigurationRoot config,
             IServiceProvider provider)
         {
@@ -32,11 +29,11 @@ namespace DiscordBot.Services
         {
             var msg = arg as SocketUserMessage;
 
-            if (msg.Author.IsBot) return;
+            if (msg == null || msg.Author.IsBot) return;
 
             var context = new SocketCommandContext(_discord, msg);
 
-            int pos = 0;
+            var pos = 0;
 
             if (msg.HasStringPrefix(_config["prefix"], ref pos) || msg.HasMentionPrefix(_discord.CurrentUser, ref pos))
             {
@@ -52,9 +49,8 @@ namespace DiscordBot.Services
         }
 
 
-        private async Task OnReady()
-        {
-            Console.Write($"Connected as {_discord.CurrentUser.Username}#{_discord.CurrentUser.Discriminator}");
+        private async Task OnReady() {
+            Console.WriteLine($"Connected as {_discord.CurrentUser.Username}#{_discord.CurrentUser.Discriminator}");
         }
     }
 }

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -17,14 +14,12 @@ namespace DiscordBot.Modules
         [RequireBotPermission(GuildPermission.ManageMessages)]
         public async Task Purge(int amount)
         {
-
             if (amount > 0)
             {
-                var messages = await Context.Channel.GetMessagesAsync(amount + 1).FlattenAsync();
-                await (Context.Channel as SocketTextChannel).DeleteMessagesAsync(messages);
+                var messages = (await Context.Channel.GetMessagesAsync(amount + 1).FlattenAsync()).ToList();
+                await ((SocketTextChannel) Context.Channel).DeleteMessagesAsync(messages);
 
-                var message =
-                    await Context.Channel.SendMessageAsync($"{messages.Count()} messages deleted successfully!");
+                var message = await Context.Channel.SendMessageAsync($"{messages.Count} messages deleted successfully!");
 
                 await Task.Delay(2500);
 
@@ -33,14 +28,11 @@ namespace DiscordBot.Modules
             else if (amount == 0)
             {
                 await Context.Channel.SendMessageAsync("No input");
-
             }
             else
             {
                 await Context.Channel.SendMessageAsync("Error occurred");
-
             }
-
         }
 
         [Command("kick")]
@@ -54,8 +46,8 @@ namespace DiscordBot.Modules
 
             await Context.Channel.DeleteMessageAsync(message);
 
-            var user = Context.User as SocketGuildUser;
-
+            if (!(Context.User is SocketGuildUser user)) return;
+            
             if (user.GuildPermissions.KickMembers)
             {
                 await userAccount.KickAsync();
@@ -74,15 +66,13 @@ namespace DiscordBot.Modules
                 var embed = builder.Build();
 
                 await Context.Channel.SendMessageAsync(null, false, embed);
-
             }
             else
             {
                 await Context.Channel.SendMessageAsync("No permissions to kick this user.");
             }
-           
         }
-    
+
         [Command("ban")]
         [Description("Kick someone's ass")]
         [RequireUserPermission(GuildPermission.Administrator)]
@@ -114,33 +104,29 @@ namespace DiscordBot.Modules
                 var embed = builder.Build();
 
                 await Context.Channel.SendMessageAsync(null, false, embed);
-
             }
             else
             {
                 await Context.Channel.SendMessageAsync("No permissions to kick this user.");
             }
-
         }
 
         [Command("verify")]
         public async Task RoleTask()
         {
-
             var message = Context.Message;
 
             await Context.Channel.DeleteMessageAsync(message).ConfigureAwait(false);
 
-            var roleId = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToString() == ("Verified"));
+            var roleId = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToString() == "Verified");
 
-            await ((SocketGuildUser)Context.User).AddRoleAsync(roleId);
+            await ((SocketGuildUser) Context.User).AddRoleAsync(roleId);
 
             var user = Context.User.Mention;
 
             await Context.Channel.SendMessageAsync($"{user} has been verified\n You can now chat with others");
-
         }
-       
+
         [Command("unmute")]
         [Description("Takeaway someone muted roles")]
         [RequireUserPermission(GuildPermission.Administrator)]
@@ -163,10 +149,9 @@ namespace DiscordBot.Modules
             await Context.Channel.SendMessageAsync(null, false, embed);
             */
 
-            var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToString() == ("Muted"));
+            var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToString() == "Muted");
 
             await user.RemoveRoleAsync(role);
-
         }
 
         [Command("mute")]
@@ -178,7 +163,7 @@ namespace DiscordBot.Modules
             var message = Context.Message;
 
             await Context.Channel.DeleteMessageAsync(message).ConfigureAwait(false);
-            
+
             /*
             var builder = new EmbedBuilder()
                 .WithThumbnailUrl(user.GetAvatarUrl() ?? user.GetDefaultAvatarUrl())
@@ -191,11 +176,9 @@ namespace DiscordBot.Modules
             await Context.Channel.SendMessageAsync(null, false, embed);
             */
 
-            var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToString() == ("Muted"));
+            var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToString() == "Muted");
 
             await user.AddRoleAsync(role);
-
         }
-
     }
 }

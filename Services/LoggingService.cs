@@ -11,10 +11,11 @@ namespace DiscordBot.Services
     {
         public LoggingService(DiscordSocketClient client, CommandService command)
         {
-            client.Log += LogAsync;
-            command.Log += LogAsync;
+            client.Log += ClientOnLog;
+            command.Log += ClientOnLog;
         }
-        private Task LogAsync(LogMessage message)
+
+        private async Task ClientOnLog(LogMessage message)
         {
             if (message.Exception is CommandException cmdException)
             {
@@ -24,9 +25,6 @@ namespace DiscordBot.Services
             }
             else
                 Console.WriteLine($"[General/{message.Severity}] {message}");
-
-            return Task.CompletedTask;
         }
     }
-
 }

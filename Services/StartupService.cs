@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -12,10 +10,10 @@ namespace DiscordBot.Services
 {
     public class StartupService
     {
-        public static IServiceProvider _provider;
-        private readonly DiscordSocketClient _discord;
+        private static IServiceProvider _provider;
         private readonly CommandService _commands;
         private readonly IConfigurationRoot _config;
+        private readonly DiscordSocketClient _discord;
 
         public StartupService(IServiceProvider provider, DiscordSocketClient discord, CommandService commands,
             IConfigurationRoot config)
@@ -24,12 +22,11 @@ namespace DiscordBot.Services
             _config = config;
             _discord = discord;
             _commands = commands;
-            
         }
 
         public async Task StartAsync()
         {
-            string token = _config["tokens:discord"];
+            var token = _config["token"];
             if (string.IsNullOrEmpty(token))
             {
                 Console.WriteLine("Please provide your discord tokens in _config.yml!!");
@@ -40,10 +37,6 @@ namespace DiscordBot.Services
             await _discord.StartAsync();
 
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly(), _provider);
-
-
         }
-
-
     }
 }
