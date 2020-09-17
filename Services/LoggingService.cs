@@ -24,7 +24,9 @@ namespace DiscordBot.Services
                 Console.WriteLine(cmdException);
             }
             else
+            {
                 Console.WriteLine($"[General/{message.Severity}] {message}");
+            }
         }
     }
 }

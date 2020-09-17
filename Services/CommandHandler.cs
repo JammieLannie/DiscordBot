@@ -8,12 +8,13 @@ namespace DiscordBot.Services
 {
     public class CommandHandler
     {
-        private readonly IServiceProvider _provider;
-        private readonly DiscordSocketClient _discord;
         private readonly CommandService _commands;
         private readonly IConfigurationRoot _config;
+        private readonly DiscordSocketClient _discord;
+        private readonly IServiceProvider _provider;
 
-        public CommandHandler(DiscordSocketClient discord, CommandService commands, IConfigurationRoot config, IServiceProvider provider)
+        public CommandHandler(DiscordSocketClient discord, CommandService commands, IConfigurationRoot config,
+            IServiceProvider provider)
         {
             _provider = provider;
             _config = config;
@@ -48,7 +49,9 @@ namespace DiscordBot.Services
         }
 
 
-        private async Task OnReady() {
+        private async Task OnReady()
+        {
+            await _discord.SetGameAsync("Dit Nhau Voi Olivia");
             Console.WriteLine($"Connected as {_discord.CurrentUser.Username}#{_discord.CurrentUser.Discriminator}");
         }
     }

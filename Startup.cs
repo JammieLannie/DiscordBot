@@ -14,7 +14,8 @@ namespace DiscordBot
     {
         public Startup(string[] args)
         {
-            if (!File.Exists("./_config.yml")) {
+            if (!File.Exists("./_config.yml"))
+            {
                 Console.WriteLine("Not found '_config.yaml'!");
                 Environment.Exit(-1);
             }
