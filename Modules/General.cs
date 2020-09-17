@@ -21,14 +21,15 @@ namespace DiscordBot.Modules
             _commands = commands;
         }
         [Command("Ping", true)]
+        [Summary("Get bot latency in ms")]
         public async Task Ping()
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
             await Context.Channel.SendMessageAsync("Bonk bonk the bot with " + Context.Message.CreatedAt.Millisecond + "ms");
         }
 
-        [Command("help", true), Alias("helpme")]
-        public async Task Help([Remainder]string arg = null)
+        [Command("help", true), Alias("help me")]
+        public async Task Help([Remainder] string arg = null)
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
             var builder = new EmbedBuilder()
@@ -38,15 +39,17 @@ namespace DiscordBot.Modules
             if (arg == null)
             {
                 foreach (var module in _commands.Modules)
-                    builder.AddField( $"{module.Summary} {module.Name}",  $"{module.Commands.Count} commands", true);
+                    builder.AddField($"{module.Summary} {module.Name}", $"{module.Commands.Count} commands", true);
                 await Context.Channel.SendMessageAsync(null, false, builder.Build());
                 return;
             }
             arg = arg.ToLower();
             var m = _commands.Modules.FirstOrDefault(c => c.Name.ToLower().Equals(arg));
-            if (m == null) {
+            if (m == null)
+            {
                 var cmd = _commands.Commands.FirstOrDefault(c => c.Name.ToLower().Equals(arg));
-                if (cmd == null) {
+                if (cmd == null)
+                {
                     await Context.Channel.SendMessageAsync($"Not found command/catalog `{CultureInfo.CurrentCulture.TextInfo.ToTitleCase(arg)}`");
                     return;
                 }
@@ -55,12 +58,14 @@ namespace DiscordBot.Modules
                 return;
             }
             foreach (var cmd in m.Commands)
-                builder.AddField( $"*{cmd.Name}",  cmd.Summary ?? "No description", true);
+                builder.AddField($"*{cmd.Name}", cmd.Summary ?? "No description", true);
             builder.WithFooter(m.Commands.Count + " commands", Context.Client.CurrentUser.GetAvatarUrl());
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
-        
+
         [Command("info", true)]
+        [Summary("Get your information")]
+
         public async Task Info()
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
@@ -71,8 +76,8 @@ namespace DiscordBot.Modules
                 .WithColor(Color.DarkTeal)
                 .AddField("User ID: ", Context.User.Id, true)
                 .AddField("Created at ", Context.User.CreatedAt.ToString("dd/MM/yyyy"), true)
-                .AddField("Joined at", ((SocketGuildUser) Context.User).JoinedAt?.ToString("dd/MM/yyyy"), true)
-                .AddField("Roles", string.Join(" , ", ((SocketGuildUser) Context.User).Roles.Select(x => x.Mention)))
+                .AddField("Joined at", ((SocketGuildUser)Context.User).JoinedAt?.ToString("dd/MM/yyyy"), true)
+                .AddField("Roles", string.Join(" , ", ((SocketGuildUser)Context.User).Roles.Select(x => x.Mention)))
                 .WithCurrentTimestamp()
                 .WithAuthor(Context.User);
             var embed = builder.Build();
@@ -81,7 +86,8 @@ namespace DiscordBot.Modules
         }
 
         [Command("dinfo", true)]
-        public async Task dInfo(IGuildUser user)
+        [Summary("Get @user information")]
+        public async Task DInfo(IGuildUser user)
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
@@ -92,7 +98,7 @@ namespace DiscordBot.Modules
                 .AddField("User ID: ", user, true)
                 .AddField("Created at ", user.CreatedAt.ToString("dd/MM/yyyy"), true)
                 .AddField("Joined at", user.JoinedAt?.ToString("dd/MM/yyyy"), true)
-                .AddField("Roles", string.Join(" , ", ((SocketGuildUser) user).Roles.Select(x => x.Mention)))
+                .AddField("Roles", string.Join(", ", ((SocketGuildUser)user).Roles.Select(x => x.Mention)))
                 .WithCurrentTimestamp()
                 .WithAuthor(Context.User);
             var embed = builder.Build();
@@ -101,6 +107,7 @@ namespace DiscordBot.Modules
         }
 
         [Command("mech", true), Alias("reddit")]
+        [Summary("Get MechanicalKeyboards random post")]
         public async Task MechanicalKeyboards(string subreddit = null)
         {
             var client = new HttpClient();
@@ -128,13 +135,16 @@ namespace DiscordBot.Modules
 
         [Command("say", true)]
         [Description("Repeat what user type")]
+        [Summary("Make bot says")]
         [RequireBotPermission(ChannelPermission.ManageMessages)]
-        public async Task Say([Remainder]string message) {
+        public async Task Say([Remainder] string message)
+        {
             await Context.Channel.DeleteMessageAsync(Context.Message);
             await Context.Channel.SendMessageAsync(message);
         }
 
         [Command("server", true)]
+        [Summary("Get information about this server")]
         public async Task Server()
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
@@ -145,9 +155,9 @@ namespace DiscordBot.Modules
                 .WithTitle($"{Context.Guild.Name} Information")
                 .WithColor(new Color(33, 176, 252))
                 .AddField("Created at", Context.Guild.CreatedAt.ToString("dd/MM/yyyy"), true)
-                .AddField("Member count", ((SocketGuild) Context.Guild).MemberCount + " members", true)
+                .AddField("Member count", ((SocketGuild)Context.Guild).MemberCount + " members", true)
                 .AddField("Online users",
-                    ((SocketGuild) Context.Guild).Users.Count(x => x.Status != UserStatus.Offline) +
+                    ((SocketGuild)Context.Guild).Users.Count(x => x.Status != UserStatus.Offline) +
                     " members", true);
             var embed = builder.Build();
             await Context.Channel.SendMessageAsync(null, false, embed);
