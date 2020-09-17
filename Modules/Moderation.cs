@@ -21,8 +21,12 @@ namespace DiscordBot.Modules
         [RequireBotPermission(GuildPermission.ManageMessages)]
         public async Task Purge(int amount)
         {
-            if (amount > 0)
+            if (amount <= 0)
             {
+                await Context.Channel.SendMessageAsync("No input");
+                return;
+            }
+
                 var messages = (await Context.Channel.GetMessagesAsync(amount + 1).FlattenAsync()).ToList();
                 await ((SocketTextChannel) Context.Channel).DeleteMessagesAsync(messages);
 
@@ -32,14 +36,7 @@ namespace DiscordBot.Modules
                 await Task.Delay(2500);
 
                 await message.DeleteAsync();
-            }
-            else if (amount == 0)
-            {
-                await Context.Channel.SendMessageAsync("No input");
                 return;
-            }
-
-            await Context.Channel.SendMessageAsync("Error occurred");
         }
 
         [Command("kick")]
@@ -182,12 +179,8 @@ namespace DiscordBot.Modules
 
             var role = user.Guild.Roles.FirstOrDefault(x =>
                 x.Name.ToLower().Equals(msg) || x.Id.ToString().Equals(msg) || x.Name.ToLower().Contains(msg));
-
-            if (role == null) return;
-
-            if (!(Context.User is SocketGuildUser userSend)) return;
             
-            if (!Utils.CanInteractRole(userSend, role)) return;
+            if (role == null || !(Context.User is SocketGuildUser userSend) || !Utils.CanInteractRole(userSend, role)) return;
 
             if (userSend.GuildPermissions.ManageRoles)
             {
@@ -226,13 +219,9 @@ namespace DiscordBot.Modules
 
             var role = user.Guild.Roles.FirstOrDefault(x =>
                 x.Name.ToLower().Equals(msg) || x.Id.ToString().Equals(msg) || x.Name.ToLower().Contains(msg));
-
-            if (role == null) return;
-
-            if (!(Context.User is SocketGuildUser userSend)) return;
-
-            if (!Utils.CanInteractRole(userSend, role)) return;
-
+            
+            if (role == null || !(Context.User is SocketGuildUser userSend) || !Utils.CanInteractRole(userSend, role)) return;
+            
             if (userSend.GuildPermissions.ManageRoles)
             {
                 var builder = new EmbedBuilder()
@@ -269,10 +258,8 @@ namespace DiscordBot.Modules
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
             var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("muted"));
-
-            if (role == null) return;
-
-            if (!(Context.User is SocketGuildUser userSend)) return;
+            
+            if (role == null || !(Context.User is SocketGuildUser userSend)) return;
 
             if (userSend.GuildPermissions.KickMembers || user.GuildPermissions.BanMembers)
             {
@@ -305,10 +292,8 @@ namespace DiscordBot.Modules
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
             var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("muted"));
-
-            if (role == null) return;
-
-            if (!(Context.User is SocketGuildUser userSend)) return;
+            
+            if (role == null || !(Context.User is SocketGuildUser userSend)) return;
 
             if (userSend.GuildPermissions.KickMembers || user.GuildPermissions.BanMembers)
             {

@@ -1,6 +1,8 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Discord;
@@ -75,37 +77,19 @@ namespace DiscordBot.Modules
 
         [Command("info", true)]
         [Summary("Get your information")]
-        public async Task Info()
+        public async Task Info(IGuildUser user = null)
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
-            var builder = new EmbedBuilder()
-                .WithThumbnailUrl(Context.User.GetAvatarUrl() ?? Context.User.GetDefaultAvatarUrl())
-                .WithDescription("Basic information about yourself!")
-                .WithColor(Color.DarkTeal)
-                .AddField("User ID: ", Context.User.Id, true)
-                .AddField("Created at ", Context.User.CreatedAt.ToString("dd/MM/yyyy"), true)
-                .AddField("Joined at", ((SocketGuildUser) Context.User).JoinedAt?.ToString("dd/MM/yyyy"), true)
-                .AddField("Roles", string.Join(" , ", ((SocketGuildUser) Context.User).Roles.Select(x => x.Mention)))
-                .WithCurrentTimestamp()
-                .WithAuthor(Context.User);
-
-            await Context.Channel.SendMessageAsync(null, false, builder.Build());
-        }
-
-        [Command("dinfo", true)]
-        [Summary("Get @user information")]
-        public async Task DInfo(IGuildUser user)
-        {
-            await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
+            user = (IGuildUser) (user ?? Context.User);
 
             var builder = new EmbedBuilder()
                 .WithThumbnailUrl(user.GetAvatarUrl() ?? user.GetDefaultAvatarUrl())
-                .WithDescription($"Basic information about {user}!")
+                .WithDescription("Basic information about yourself!")
                 .WithColor(Color.DarkTeal)
-                .AddField("User ID: ", user, true)
+                .AddField("User ID: ", user.Id, true)
                 .AddField("Created at ", user.CreatedAt.ToString("dd/MM/yyyy"), true)
-                .AddField("Joined at", user.JoinedAt?.ToString("dd/MM/yyyy"), true)
+                .AddField("Joined at", ((SocketGuildUser) user).JoinedAt?.ToString("dd/MM/yyyy"), true)
                 .AddField("Roles", string.Join(", ", ((SocketGuildUser) user).Roles.Select(x => x.Mention)))
                 .WithCurrentTimestamp()
                 .WithAuthor(Context.User);
