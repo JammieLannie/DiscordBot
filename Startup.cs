@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using Discord;
+using Discord.Addons.Interactive;
 using Discord.Commands;
 using Discord.WebSocket;
 using DiscordBot.Services;
@@ -61,6 +62,7 @@ namespace DiscordBot
                 }))
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<StartupService>()
+                .AddSingleton<InteractiveService>()
                 .AddSingleton(Configuration);
         }
     }
