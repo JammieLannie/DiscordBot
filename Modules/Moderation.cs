@@ -138,20 +138,6 @@ namespace DiscordBot.Modules
             }
         }
 
-        /*
-        [Command("Nuke")
-        [Description("Clone channel and delete old one")]
-        [Summary("Nuke a channel")]
-        [RequireBotPermission(GuildPermission.Administrator)]
-        [RequireUserPermission(GuildPermission.Administrator)]
-        public async Task Nuke()
-        {
-
-        }
-
-        */
-
-
         [Command("Create", true)]
         [Summary("Create a new role")]
         [RequireBotPermission(GuildPermission.Administrator)]
@@ -182,7 +168,7 @@ namespace DiscordBot.Modules
             if (role == null || !(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.ManageRoles ||
                 !Utils.CanInteractRole(userSend, role))
             {
-                await Utils.sendInvalidPerm(Context.User, Context.Channel);
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
 
@@ -221,10 +207,9 @@ namespace DiscordBot.Modules
             if (role == null || !(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.ManageRoles ||
                 !Utils.CanInteractRole(userSend, role))
             {
-                await Utils.sendInvalidPerm(Context.User, Context.Channel);
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
-
 
             var builder = new EmbedBuilder()
                 .WithTitle("Logged Information")
@@ -245,72 +230,5 @@ namespace DiscordBot.Modules
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
 
-
-        [Command("unmute")]
-        [Description("Takeaway someone muted roles")]
-        [Summary("Unmute someone. Need admin perm & bot manage role perm")]
-        //[RequireUserPermission(GuildPermission.Administrator)]
-        [RequireBotPermission(GuildPermission.ManageRoles)]
-        public async Task UnMute(IGuildUser user)
-        {
-            await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
-
-            var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("muted"));
-
-            if (role == null || !(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.KickMembers ||
-                !user.GuildPermissions.BanMembers)
-            {
-                await Utils.sendInvalidPerm(Context.User, Context.Channel);
-                return;
-            }
-
-            await user.RemoveRoleAsync(role);
-
-            var builder = new EmbedBuilder()
-                .WithTitle("Logged Information")
-                .AddField("User", $"{user.Mention}")
-                .AddField("Moderator", $"{Context.User.Mention}")
-                .AddField("Other Information", "Released from jail!!")
-                .WithDescription(
-                    $"This user has been unmuted from {Context.Guild.Name} by {Context.User.Username}")
-                .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
-                .WithCurrentTimestamp()
-                .WithColor(new Color(54, 57, 62));
-            await Context.Channel.SendMessageAsync(null, false, builder.Build());
-        }
-
-        [Command("mute")]
-        [Description("Takeaway someone muted roles")]
-        [Summary("Mute someone. Need admin perm & bot manage role perm")]
-        //[RequireUserPermission(GuildPermission.Administrator)]
-        [RequireBotPermission(GuildPermission.ManageRoles)]
-        public async Task Mute(IGuildUser user)
-        {
-            await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
-
-            var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("muted"));
-
-            if (role == null || !(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.KickMembers ||
-                !user.GuildPermissions.BanMembers)
-            {
-                await Utils.sendInvalidPerm(Context.User, Context.Channel);
-                return;
-            }
-
-
-            await user.AddRoleAsync(role);
-
-            var builder = new EmbedBuilder()
-                .WithTitle("Logged Information")
-                .AddField("User", $"{user.Mention}")
-                .AddField("Moderator", $"{Context.User.Mention}")
-                .AddField("Other Information", "Violate rules / Personal")
-                .WithDescription(
-                    $"This user has been muted from {Context.Guild.Name} by {Context.User.Username}")
-                .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
-                .WithCurrentTimestamp()
-                .WithColor(new Color(54, 57, 62));
-            await Context.Channel.SendMessageAsync(null, false, builder.Build());
-        }
     }
 }

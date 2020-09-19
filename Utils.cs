@@ -7,7 +7,7 @@ namespace DiscordBot
 {
     public class Utils
     {
-        public static async Task sendInvalidPerm(IUser user, IMessageChannel channel)
+        public static async Task SendInvalidPerm(IUser user, IMessageChannel channel)
         {
             var builder = new EmbedBuilder()
                 .WithTitle("Logged Information")
