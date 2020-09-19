@@ -27,16 +27,15 @@ namespace DiscordBot.Modules
                 return;
             }
 
-                var messages = (await Context.Channel.GetMessagesAsync(amount + 1).FlattenAsync()).ToList();
-                await ((SocketTextChannel) Context.Channel).DeleteMessagesAsync(messages);
+            var messages = (await Context.Channel.GetMessagesAsync(amount + 1).FlattenAsync()).ToList();
+            await ((SocketTextChannel) Context.Channel).DeleteMessagesAsync(messages);
 
-                var message =
-                    await Context.Channel.SendMessageAsync($"{messages.Count} messages deleted successfully!");
+            var message =
+                await Context.Channel.SendMessageAsync($"{messages.Count} messages deleted successfully!");
 
-                await Task.Delay(2500);
+            await Task.Delay(2500);
 
-                await message.DeleteAsync();
-                return;
+            await message.DeleteAsync();
         }
 
         [Command("kick")]
@@ -179,31 +178,30 @@ namespace DiscordBot.Modules
 
             var role = user.Guild.Roles.FirstOrDefault(x =>
                 x.Name.ToLower().Equals(msg) || x.Id.ToString().Equals(msg) || x.Name.ToLower().Contains(msg));
-            
-            if (role == null || !(Context.User is SocketGuildUser userSend) || !Utils.CanInteractRole(userSend, role)) return;
 
-            if (userSend.GuildPermissions.ManageRoles)
+            if (role == null || !(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.ManageRoles ||
+                !Utils.CanInteractRole(userSend, role))
             {
-                var builder = new EmbedBuilder()
-                    .WithTitle("Logged Information")
-                    .AddField("User", $"{user.Mention}")
-                    .AddField("Moderator", $"{Context.User.Mention}")
-                    .WithDescription(
-                        $"{role} does not exist from {user}")
-                    .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
-                    .WithCurrentTimestamp()
-                    .WithColor(new Color(54, 57, 62));
-                if (user.Roles.Contains(role))
-                {
-                    await user.RemoveRoleAsync(role);
-                    builder.WithDescription($"{role} has been revoke from {user} by {Context.User.Username}");
-                }
-
-                await Context.Channel.SendMessageAsync(null, false, builder.Build());
+                await Utils.sendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
 
-            await Utils.sendInvalidPerm(Context.User, Context.Channel);
+            var builder = new EmbedBuilder()
+                .WithTitle("Logged Information")
+                .AddField("User", $"{user.Mention}")
+                .AddField("Moderator", $"{Context.User.Mention}")
+                .WithDescription(
+                    $"{role} does not exist from {user}")
+                .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
+                .WithCurrentTimestamp()
+                .WithColor(new Color(54, 57, 62));
+            if (user.Roles.Contains(role))
+            {
+                await user.RemoveRoleAsync(role);
+                builder.WithDescription($"{role} has been revoke from {user} by {Context.User.Username}");
+            }
+
+            await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
 
         [Command("give", true)]
@@ -219,32 +217,32 @@ namespace DiscordBot.Modules
 
             var role = user.Guild.Roles.FirstOrDefault(x =>
                 x.Name.ToLower().Equals(msg) || x.Id.ToString().Equals(msg) || x.Name.ToLower().Contains(msg));
-            
-            if (role == null || !(Context.User is SocketGuildUser userSend) || !Utils.CanInteractRole(userSend, role)) return;
-            
-            if (userSend.GuildPermissions.ManageRoles)
+
+            if (role == null || !(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.ManageRoles ||
+                !Utils.CanInteractRole(userSend, role))
             {
-                var builder = new EmbedBuilder()
-                    .WithTitle("Logged Information")
-                    .AddField("User", $"{user.Mention}")
-                    .AddField("Moderator", $"{Context.User.Mention}")
-                    .WithDescription(
-                        $"{user} already has the role {role}")
-                    .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
-                    .WithCurrentTimestamp()
-                    .WithColor(new Color(54, 57, 62));
-
-                if (!user.Roles.Contains(role))
-                {
-                    await user.AddRoleAsync(role);
-                    builder.WithDescription($"{user} has been granted {role} by {Context.User.Username}");
-                }
-
-                await Context.Channel.SendMessageAsync(null, false, builder.Build());
+                await Utils.sendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
 
-            await Utils.sendInvalidPerm(Context.User, Context.Channel);
+
+            var builder = new EmbedBuilder()
+                .WithTitle("Logged Information")
+                .AddField("User", $"{user.Mention}")
+                .AddField("Moderator", $"{Context.User.Mention}")
+                .WithDescription(
+                    $"{user} already has the role {role}")
+                .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
+                .WithCurrentTimestamp()
+                .WithColor(new Color(54, 57, 62));
+
+            if (!user.Roles.Contains(role))
+            {
+                await user.AddRoleAsync(role);
+                builder.WithDescription($"{user} has been granted {role} by {Context.User.Username}");
+            }
+
+            await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
 
 
@@ -258,28 +256,27 @@ namespace DiscordBot.Modules
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
             var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("muted"));
-            
-            if (role == null || !(Context.User is SocketGuildUser userSend)) return;
 
-            if (userSend.GuildPermissions.KickMembers || user.GuildPermissions.BanMembers)
+            if (role == null || !(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.KickMembers ||
+                !user.GuildPermissions.BanMembers)
             {
-                await user.RemoveRoleAsync(role);
-
-                var builder = new EmbedBuilder()
-                    .WithTitle("Logged Information")
-                    .AddField("User", $"{user.Mention}")
-                    .AddField("Moderator", $"{Context.User.Mention}")
-                    .AddField("Other Information", "Released from jail!!")
-                    .WithDescription(
-                        $"This user has been unmuted from {Context.Guild.Name} by {Context.User.Username}")
-                    .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
-                    .WithCurrentTimestamp()
-                    .WithColor(new Color(54, 57, 62));
-                await Context.Channel.SendMessageAsync(null, false, builder.Build());
+                await Utils.sendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
 
-            await Utils.sendInvalidPerm(Context.User, Context.Channel);
+            await user.RemoveRoleAsync(role);
+
+            var builder = new EmbedBuilder()
+                .WithTitle("Logged Information")
+                .AddField("User", $"{user.Mention}")
+                .AddField("Moderator", $"{Context.User.Mention}")
+                .AddField("Other Information", "Released from jail!!")
+                .WithDescription(
+                    $"This user has been unmuted from {Context.Guild.Name} by {Context.User.Username}")
+                .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
+                .WithCurrentTimestamp()
+                .WithColor(new Color(54, 57, 62));
+            await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
 
         [Command("mute")]
@@ -292,28 +289,28 @@ namespace DiscordBot.Modules
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
             var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("muted"));
-            
-            if (role == null || !(Context.User is SocketGuildUser userSend)) return;
 
-            if (userSend.GuildPermissions.KickMembers || user.GuildPermissions.BanMembers)
+            if (role == null || !(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.KickMembers ||
+                !user.GuildPermissions.BanMembers)
             {
-                await user.AddRoleAsync(role);
-
-                var builder = new EmbedBuilder()
-                    .WithTitle("Logged Information")
-                    .AddField("User", $"{user.Mention}")
-                    .AddField("Moderator", $"{Context.User.Mention}")
-                    .AddField("Other Information", "Violate rules / Personal")
-                    .WithDescription(
-                        $"This user has been muted from {Context.Guild.Name} by {Context.User.Username}")
-                    .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
-                    .WithCurrentTimestamp()
-                    .WithColor(new Color(54, 57, 62));
-                await Context.Channel.SendMessageAsync(null, false, builder.Build());
+                await Utils.sendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
 
-            await Utils.sendInvalidPerm(Context.User, Context.Channel);
+
+            await user.AddRoleAsync(role);
+
+            var builder = new EmbedBuilder()
+                .WithTitle("Logged Information")
+                .AddField("User", $"{user.Mention}")
+                .AddField("Moderator", $"{Context.User.Mention}")
+                .AddField("Other Information", "Violate rules / Personal")
+                .WithDescription(
+                    $"This user has been muted from {Context.Guild.Name} by {Context.User.Username}")
+                .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
+                .WithCurrentTimestamp()
+                .WithColor(new Color(54, 57, 62));
+            await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
     }
 }

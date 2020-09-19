@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
+
 namespace DiscordBot.Modules
 {
     public class ServerCommand : InteractiveBase
@@ -16,7 +17,6 @@ namespace DiscordBot.Modules
             [Summary("Nuke a channel")]
             [RequireBotPermission(GuildPermission.Administrator)]
             [RequireUserPermission(GuildPermission.Administrator)]
-
             public async Task NukeChannel()
             {
                 await ReplyAndDeleteAsync("Are you sure you want to nuke this channel ?",
@@ -28,7 +28,7 @@ namespace DiscordBot.Modules
                     {
                         var channel = Context.Channel;
 
-                        var oldChannel = ((ITextChannel)channel);
+                        var oldChannel = (ITextChannel) channel;
 
                         var guild = Context.Guild;
 
@@ -46,13 +46,10 @@ namespace DiscordBot.Modules
                         });
 
                         await oldChannel.DeleteAsync();
-
-                        return;
                     }
                     else if (response.ToString().ToLower().Equals("no"))
                     {
                         await ReplyAsync($"Nuke cancelled on {Context.Channel.Name}");
-                        return;
                     }
                 }
                 else
@@ -60,7 +57,6 @@ namespace DiscordBot.Modules
                     await ReplyAsync($"{Context.User.Mention}, command timed out...");
                 }
             }
-
         }
     }
 }
