@@ -44,7 +44,8 @@ namespace DiscordBot.Modules
             if (arg == null)
             {
                 foreach (var module in _commands.Modules)
-                    builder.AddField($"{module.Summary} {module.Name}", $"{module.Commands.Count} commands", true);
+                    builder.AddField($"{module.Summary.ToLower()} {module.Name}", $"{module.Commands.Count} commands",
+                        true);
                 await Context.Channel.SendMessageAsync(null, false, builder.Build());
                 return;
             }
@@ -61,8 +62,13 @@ namespace DiscordBot.Modules
                     return;
                 }
 
-                builder.WithDescription("Description: " + (cmd.Summary ?? "No description"))
-                    .WithTitle($"Help for: {cmd.Name}");
+                var desc = "Description: " + (cmd.Summary ?? "No description");
+                var parameter = cmd.Parameters.Aggregate<ParameterInfo, string>(null,
+                    (current, parameterInfo) =>
+                        $"{(current == null ? null : current + "\n")}'{parameterInfo.Name}' [{parameterInfo.Type.Name}] - {parameterInfo.Summary ?? "No description"}");
+                builder.WithDescription(desc)
+                    .WithTitle($"Help for: {cmd.Name}")
+                    .AddField("Parameters", parameter);
                 await Context.Channel.SendMessageAsync(null, false, builder.Build());
                 return;
             }

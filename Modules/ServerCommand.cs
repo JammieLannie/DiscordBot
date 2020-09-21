@@ -17,6 +17,7 @@ namespace DiscordBot.Modules
         [RequireBotPermission(GuildPermission.ManageNicknames)]
         public async Task SetName(IGuildUser user, [Remainder] string nickName)
         {
+            if (nickName == null) return;
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
             if (!(Context.User is SocketGuildUser userSend)
@@ -25,21 +26,15 @@ namespace DiscordBot.Modules
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
-            if (nickName == null)
-            {
-                return;
-            }
-            else
-            {
-                await user.ModifyAsync(c => c.Nickname = nickName);
-                var builder = new EmbedBuilder()
-                    .WithTitle("Name changed")
-                    .WithDescription(
-                        $"{user}'s name has been changed to {nickName}!")
-                    .WithCurrentTimestamp()
-                    .WithColor(new Color(54, 57, 62));
-                await Context.Channel.SendMessageAsync(null, false, builder.Build());
-            }
+
+            await user.ModifyAsync(c => c.Nickname = nickName);
+            var builder = new EmbedBuilder()
+                .WithTitle("Name changed")
+                .WithDescription(
+                    $"{user}'s name has been changed to {nickName}!")
+                .WithCurrentTimestamp()
+                .WithColor(new Color(54, 57, 62));
+            await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
 
         [Command("mute")]
@@ -71,23 +66,14 @@ namespace DiscordBot.Modules
                 return;
             }
 
-            bool roleExist = false;
 
             ulong roleId = 0;
 
             foreach (var gRole in Context.Guild.Roles)
-            {
                 if (gRole.Name.ToLower().Equals("muted"))
-                {
-                    roleExist = true;
                     roleId = gRole.Id;
-                }
-                else
-                {
-                    continue;
-                }
-            }
-            if (!roleExist)
+
+            if (roleId != 0)
             {
                 var roleCreation =
                     await Context.Guild.CreateRoleAsync("Muted", GuildPermissions.None, null, false, false);
@@ -97,14 +83,12 @@ namespace DiscordBot.Modules
                     await Context.Channel.SendMessageAsync(null, false, builder.Build());
 
                     foreach (var channel in Context.Guild.Channels)
-                    {
                         await channel.AddPermissionOverwriteAsync(roleCreation,
                             OverwritePermissions.DenyAll(channel).Modify(
                                 sendMessages: PermValue.Deny,
                                 viewChannel: PermValue.Allow,
                                 readMessageHistory: PermValue.Allow)
                         );
-                    }
                 }
                 catch (Exception e)
                 {
@@ -177,7 +161,7 @@ namespace DiscordBot.Modules
                     if (response.ToString().ToLower().Equals("yes"))
                     {
                         var channel = Context.Channel;
-                        var oldChannel = ((ITextChannel)channel);
+                        var oldChannel = (ITextChannel) channel;
                         var guild = Context.Guild;
 
                         await ReplyAsync($"Nuking this channel {Context.Channel.Name} in 10s");
@@ -193,13 +177,11 @@ namespace DiscordBot.Modules
                             newChannel.IsNsfw = oldChannel.IsNsfw;
                         });
                         await oldChannel.DeleteAsync();
-                        return;
                     }
                     else if (response.ToString().ToLower().Equals("no"))
                     {
                         await ReplyAsync($"Nuke cancelled on {Context.Channel.Name}");
                         await Task.Delay(10000);
-                        return;
                     }
                 }
                 else
@@ -224,31 +206,23 @@ namespace DiscordBot.Modules
                 return;
             }
 
-            await Context.Channel.SendMessageAsync($"Granting role for {((SocketGuild)Context.Guild).MemberCount} user");
+            await Context.Channel.SendMessageAsync($"Granting role for {Context.Guild.MemberCount} user");
 
             var roleVerify = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("verified"));
 
             if (roleVerify == null)
             {
-                if (((SocketCommandContext)Context).IsPrivate) return;
-                var role = await Context.Guild.CreateRoleAsync("Verified", Utils.MemPermissions(), null, false, false);
-                if (Context.User is SocketGuildUser)
-                {
-                    foreach (var user in Context.Guild.Users)
-                    {
-                        await user.AddRoleAsync(role);
-                    }
-                    await Context.Channel.SendMessageAsync($"Everyone is now have the role {role}!");
-                }
+                if (Context.IsPrivate) return;
+                var role = await Context.Guild.CreateRoleAsync("Verified", Utils.MemPermissions, null, false, false);
+                if (!(Context.User is SocketGuildUser)) return;
+                foreach (var user in Context.Guild.Users) await user.AddRoleAsync(role);
+                await Context.Channel.SendMessageAsync($"Everyone is now have the role {role}!");
                 return;
             }
 
             if (Context.User is SocketGuildUser)
             {
-                foreach (var user in Context.Guild.Users)
-                {
-                    await user.AddRoleAsync(roleVerify);
-                }
+                foreach (var user in Context.Guild.Users) await user.AddRoleAsync(roleVerify);
                 await Context.Channel.SendMessageAsync($"Everyone is now have the role {roleVerify}!");
             }
         }

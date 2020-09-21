@@ -14,7 +14,7 @@ namespace DiscordBot.Modules
         [Summary("Purge message from channel")]
         [RequireUserPermission(GuildPermission.Administrator)]
         [RequireBotPermission(GuildPermission.ManageMessages)]
-        public async Task Purge(int amount)
+        public async Task Purge([Summary("test")] int amount)
         {
             if (amount <= 0)
             {
@@ -154,7 +154,7 @@ namespace DiscordBot.Modules
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
-            if (((SocketCommandContext)Context).IsPrivate || msg == null) return;
+            if (((SocketCommandContext) Context).IsPrivate || msg == null) return;
             msg = msg.ToLower();
 
             var role = user.Guild.Roles.FirstOrDefault(x =>
@@ -170,10 +170,7 @@ namespace DiscordBot.Modules
                 .WithCurrentTimestamp()
                 .WithColor(new Color(54, 57, 62));
 
-            if (role == null)
-            {
-                builder.WithDescription($"This role does not exist in {Context.Guild.Name}!");
-            }
+            if (role == null) builder.WithDescription($"This role does not exist in {Context.Guild.Name}!");
 
             if (!(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.ManageRoles ||
                 !Utils.CanInteractRole(userSend, role))
@@ -230,6 +227,5 @@ namespace DiscordBot.Modules
 
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
-
     }
 }
