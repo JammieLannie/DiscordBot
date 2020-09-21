@@ -11,6 +11,37 @@ namespace DiscordBot.Modules
 {
     public class ServerCommand : InteractiveBase
     {
+        [Command("set")]
+        [Description("Change someone nickname")]
+        [Summary("Change user nickname")]
+        [RequireBotPermission(GuildPermission.ManageNicknames)]
+        public async Task SetName(IGuildUser user, [Remainder] string nickName)
+        {
+            await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
+
+            if (!(Context.User is SocketGuildUser userSend)
+                || !userSend.GuildPermissions.ManageNicknames)
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
+            if (nickName == null)
+            {
+                return;
+            }
+            else
+            {
+                await user.ModifyAsync(c => c.Nickname = nickName);
+                var builder = new EmbedBuilder()
+                    .WithTitle("Name changed")
+                    .WithDescription(
+                        $"{user}'s name has been changed to {nickName}!")
+                    .WithCurrentTimestamp()
+                    .WithColor(new Color(54, 57, 62));
+                await Context.Channel.SendMessageAsync(null, false, builder.Build());
+            }
+        }
+
         [Command("mute")]
         [Description("Takeaway someone muted roles")]
         [Summary("Mute someone. Need admin perm & bot manage role perm")]
@@ -175,6 +206,50 @@ namespace DiscordBot.Modules
                 {
                     await ReplyAsync($"{Context.User.Mention}, command timed out...");
                 }
+            }
+        }
+
+        [Command("verifyall")]
+        [Summary("Grant verified role to all user")]
+        [RequireBotPermission(GuildPermission.ManageRoles)]
+        public async Task VerifyAll()
+        {
+            if (!(Context.User is SocketGuildUser userSend)
+                || !(userSend.GuildPermissions.KickMembers
+                     || userSend.GuildPermissions.BanMembers
+                     || userSend.GuildPermissions.ManageRoles
+                     || userSend.GuildPermissions.Administrator))
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
+
+            await Context.Channel.SendMessageAsync($"Granting role for {((SocketGuild)Context.Guild).MemberCount} user");
+
+            var roleVerify = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("verified"));
+
+            if (roleVerify == null)
+            {
+                if (((SocketCommandContext)Context).IsPrivate) return;
+                var role = await Context.Guild.CreateRoleAsync("Verified", Utils.MemPermissions(), null, false, false);
+                if (Context.User is SocketGuildUser)
+                {
+                    foreach (var user in Context.Guild.Users)
+                    {
+                        await user.AddRoleAsync(role);
+                    }
+                    await Context.Channel.SendMessageAsync($"Everyone is now have the role {role}!");
+                }
+                return;
+            }
+
+            if (Context.User is SocketGuildUser)
+            {
+                foreach (var user in Context.Guild.Users)
+                {
+                    await user.AddRoleAsync(roleVerify);
+                }
+                await Context.Channel.SendMessageAsync($"Everyone is now have the role {roleVerify}!");
             }
         }
     }

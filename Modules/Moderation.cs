@@ -10,11 +10,6 @@ namespace DiscordBot.Modules
     [Summary(":shield:")]
     public class Moderation : ModuleBase
     {
-        public static bool CanInteractRole(SocketGuildUser user, SocketRole role)
-        {
-            return user.Roles.Select(r => r.Position).Prepend(0).Max() > role.Position;
-        }
-
         [Command("purge")]
         [Summary("Purge message from channel")]
         [RequireUserPermission(GuildPermission.Administrator)]
