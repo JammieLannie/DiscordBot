@@ -154,18 +154,11 @@ namespace DiscordBot.Modules
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
-            if (((SocketCommandContext) Context).IsPrivate || msg == null) return;
+            if (((SocketCommandContext)Context).IsPrivate || msg == null) return;
             msg = msg.ToLower();
 
             var role = user.Guild.Roles.FirstOrDefault(x =>
                 x.Name.ToLower().Equals(msg) || x.Id.ToString().Equals(msg) || x.Name.ToLower().Contains(msg));
-
-            if (role == null || !(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.ManageRoles ||
-                !Utils.CanInteractRole(userSend, role))
-            {
-                await Utils.SendInvalidPerm(Context.User, Context.Channel);
-                return;
-            }
 
             var builder = new EmbedBuilder()
                 .WithTitle("Logged Information")
@@ -176,6 +169,19 @@ namespace DiscordBot.Modules
                 .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
                 .WithCurrentTimestamp()
                 .WithColor(new Color(54, 57, 62));
+
+            if (role == null)
+            {
+                builder.WithDescription($"This role does not exist in {Context.Guild.Name}!");
+            }
+
+            if (!(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.ManageRoles ||
+                !Utils.CanInteractRole(userSend, role))
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
+
             if (user.Roles.Contains(role))
             {
                 await user.RemoveRoleAsync(role);
