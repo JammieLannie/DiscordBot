@@ -5,179 +5,71 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using Nekos.Net;
 using Nekos.Net.Endpoints;
-using Nekos.Net.Responses;
 
 namespace DiscordBot.Modules
 {
     [Summary(":satellite:")]
     public class Fun : InteractiveBase
     {
-        private readonly EmbedBuilder _builder = new EmbedBuilder();
 
         [Command("poke")]
         [Summary("Poke someone or yourself ?")]
         public async Task NekoPoke(IGuildUser user = null)
         {
-            var author = Context.User;
-            NekosImage image = await NekosClient.GetSfwAsync(SfwEndpoint.Poke);
-            if (user != null && user != author)
-            {
-                _builder.WithDescription($"{author.Mention} has poked {user.Mention}!")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else if (user == author || user == null)
-            {
-                _builder.WithDescription($"{author.Mention} has poked themselves ?")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else
-            {
-                await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));
-            }
+            await SendFunCmd(SfwEndpoint.Poke, user);
         }
-
-        [Command("poke")]
+        
+        [Command("cuddle")]
         [Summary("Cuddle someone or yourself ?")]
         public async Task NekoCuddle(IGuildUser user = null)
         {
-            var author = Context.User;
-            NekosImage image = await NekosClient.GetSfwAsync(SfwEndpoint.Cuddle);
-            if (user != null && user != author)
-            {
-                _builder.WithDescription($"{author.Mention} has cuddled {user.Mention}!")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else if (user == author || user == null)
-            {
-                _builder.WithDescription($"{author.Mention} has cuddled themselves ?")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else
-            {
-                await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));
-            }
+            await SendFunCmd(SfwEndpoint.Cuddle, user);
         }
 
         [Command("pat")]
         [Summary("Pat someone or yourself ?")]
         public async Task NekoPat(IGuildUser user = null)
         {
-            var author = Context.User;
-            NekosImage image = await NekosClient.GetSfwAsync(SfwEndpoint.Pat);
-            if (user != null && user != author)
-            {
-                _builder.WithDescription($"{author.Mention} has patted {user.Mention}!")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else if (user == author || user == null)
-            {
-                _builder.WithDescription($"{author.Mention} has patted themselves ?")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else
-            {
-                await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));
-            }
+            await SendFunCmd(SfwEndpoint.Pat, user);
         }
 
         [Command("tickle")]
         [Summary("Tickle someone or yourself ?")]
         public async Task NekoTickle(IGuildUser user = null)
         {
-            var author = Context.User;
-            NekosImage image = await NekosClient.GetSfwAsync(SfwEndpoint.Tickle);
-            if (user != null && user != author)
-            {
-                _builder.WithDescription($"{author.Mention} has tickled {user.Mention}!")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else if (user == author || user == null)
-            {
-                _builder.WithDescription($"{author.Mention} has tickled themselves ?")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else
-            {
-                await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));
-            }
+            await SendFunCmd(SfwEndpoint.Tickle, user);
         }
 
         [Command("hug")]
         [Summary("Hug someone or yourself ?")]
         public async Task NekoHug(IGuildUser user = null)
         {
-            var author = Context.User;
-            NekosImage image = await NekosClient.GetSfwAsync(SfwEndpoint.Hug);
-            if (user != null && user != author)
-            {
-                _builder.WithDescription($"{author.Mention} has hugged {user.Mention}!")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else if (user == author || user == null)
-            {
-                _builder.WithDescription($"{author.Mention} has hugged themselves ?")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else
-            {
-                await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));
-            }
+            await SendFunCmd(SfwEndpoint.Hug, user);
         }
 
         [Command("slap")]
         [Summary("Slap someone or yourself ?")]
         public async Task NekoSlap(IGuildUser user = null)
         {
-            var author = Context.User;
-            NekosImage image = await NekosClient.GetSfwAsync(SfwEndpoint.Slap);
-            if (user != null && user != author)
-            {
-                _builder.WithDescription($"{author.Mention} has slapped {user.Mention}!")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else if (user == author || user == null)
-            {
-                _builder.WithDescription($"{author.Mention} has slapped themselves ?")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else
-            {
-                await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));
-            }
+            await SendFunCmd(SfwEndpoint.Slap, user);
         }
 
         [Command("kiss")]
         [Summary("Kiss someone or yourself ?")]
         public async Task NekoKiss(IGuildUser user = null)
         {
-            var author = Context.User;
-            NekosImage image = await NekosClient.GetSfwAsync(SfwEndpoint.Kiss);
-            if (user != null && user != author)
+            await SendFunCmd(SfwEndpoint.Kiss, user);
+        }
+
+        private async Task SendFunCmd(SfwEndpoint endpoint, IUser user)
+        {
+            try
             {
-                _builder.WithDescription($"{author.Mention} has kissed {user.Mention}!")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
+                var author = Context.User;
+                var image = await NekosClient.GetSfwAsync(endpoint);
+                await ReplyAsync(null, false, new EmbedBuilder().WithDescription(user == null || author == user ? $"{author.Mention} has {endpoint.ToString().Replace("_", " ")} themselves ?" : $"{author.Mention} has poked {user.Mention}!").WithImageUrl(image.FileUrl).Build());
             }
-            else if (user == author || user == null)
-            {
-                _builder.WithDescription($"{author.Mention} has kissed themselves ?")
-                    .WithImageUrl(image.FileUrl);
-                await ReplyAsync(null, false, _builder.Build());
-            }
-            else
-            {
+            catch {
                 await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));
             }
         }

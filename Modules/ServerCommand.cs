@@ -9,16 +9,13 @@ using Discord.WebSocket;
 
 namespace DiscordBot.Modules
 {
-    [Summary(":b:")]
     public class ServerCommand : InteractiveBase
     {
-        private readonly EmbedBuilder _builder = new EmbedBuilder();
-
         [Command("set")]
         [Description("Change someone nickname")]
         [Summary("Change user nickname")]
         [RequireBotPermission(GuildPermission.ManageNicknames)]
-        public async Task SetName(SocketGuildUser user, [Remainder] string nickName = null)
+        public async Task SetName(IGuildUser user, [Remainder] string nickName)
         {
             if (nickName == null) return;
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
@@ -31,44 +28,13 @@ namespace DiscordBot.Modules
             }
 
             await user.ModifyAsync(c => c.Nickname = nickName);
-            _builder.WithTitle("Name changed")
+            var builder = new EmbedBuilder()
+                .WithTitle("Name changed")
                 .WithDescription(
                     $"{user}'s name has been changed to {nickName}!")
                 .WithCurrentTimestamp()
                 .WithColor(new Color(54, 57, 62));
-            await Context.Channel.SendMessageAsync(null, false, _builder.Build());
-        }
-
-        [Command("memberperm")]
-        [Summary("Disable mention everyone / here on roles")]
-        [RequireBotPermission(GuildPermission.ManageRoles)]
-        public async Task DisableMention()
-        {
-            if (Context.User is SocketGuildUser)
-            {
-                foreach (var roles in Context.Guild.Roles)
-                {
-                    try
-                    {
-                        if (roles.ToString().ToLower().Equals("muted"))
-                        {
-                            Console.WriteLine($"skipped {roles}");
-                            continue;
-                        }
-                        Console.WriteLine($"Role : {roles}");
-                        await roles.ModifyAsync(r => r.Permissions = Utils.MemPermissions);
-                    }
-                    catch
-                    {
-                        Console.WriteLine($"{roles} is the same or higher than bot!!");
-                    }
-                }
-                await Context.Channel.SendMessageAsync("Mention disabled on all non-powered roles");
-            }
-            else
-            {
-                await Context.Channel.SendMessageAsync("Permission denied!");
-            }
+            await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
 
         [Command("mute")]
@@ -76,14 +42,15 @@ namespace DiscordBot.Modules
         [Summary("Mute someone. Need admin perm & bot manage role perm")]
         //[RequireUserPermission(GuildPermission.Administrator)]
         [RequireBotPermission(GuildPermission.ManageRoles)]
-        public async Task Mute(SocketGuildUser user, [Remainder] string reason = null)
+        public async Task Mute(IGuildUser user)
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
-            _builder.WithTitle("Logged Information")
+            var builder = new EmbedBuilder()
+                .WithTitle("Logged Information")
                 .AddField("User", $"{user.Mention}")
                 .AddField("Moderator", $"{Context.User.Mention}")
-                .AddField("Reason", $"{reason}")
+                .AddField("Other Information", "Violate rules / Personal")
                 .WithDescription(
                     $"This user has been muted from {Context.Guild.Name} by {Context.User.Username}")
                 .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
@@ -93,37 +60,35 @@ namespace DiscordBot.Modules
             if (!(Context.User is SocketGuildUser userSend)
                 || !(userSend.GuildPermissions.KickMembers
                      || user.GuildPermissions.BanMembers
-                     || user.GuildPermissions.ManageRoles
-                     || !Utils.CanInteractUser(userSend, user)))
+                     || user.GuildPermissions.ManageRoles))
             {
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
 
-            bool roleExist = false;
 
             ulong roleId = 0;
 
             foreach (var gRole in Context.Guild.Roles)
-            {
                 if (gRole.Name.ToLower().Equals("muted"))
-                {
-                    roleExist = true;
                     roleId = gRole.Id;
-                }
-                else
-                {
-                    continue;
-                }
-            }
-            if (!roleExist)
+
+            if (roleId != 0)
             {
                 var roleCreation =
-                    await Context.Guild.CreateRoleAsync("Muted", Utils.MutedPermissions, null, false, false);
+                    await Context.Guild.CreateRoleAsync("Muted", GuildPermissions.None, null, false, false);
                 try
                 {
                     await user.AddRoleAsync(roleCreation);
-                    await Context.Channel.SendMessageAsync(null, false, _builder.Build());
+                    await Context.Channel.SendMessageAsync(null, false, builder.Build());
+
+                    foreach (var channel in Context.Guild.Channels)
+                        await channel.AddPermissionOverwriteAsync(roleCreation,
+                            OverwritePermissions.DenyAll(channel).Modify(
+                                sendMessages: PermValue.Deny,
+                                viewChannel: PermValue.Allow,
+                                readMessageHistory: PermValue.Allow)
+                        );
                 }
                 catch (Exception e)
                 {
@@ -135,7 +100,7 @@ namespace DiscordBot.Modules
                 var mutedRole = Context.Guild.GetRole(roleId);
                 await user.AddRoleAsync(mutedRole);
 
-                await Context.Channel.SendMessageAsync(null, false, _builder.Build());
+                await Context.Channel.SendMessageAsync(null, false, builder.Build());
             }
         }
 
@@ -144,17 +109,15 @@ namespace DiscordBot.Modules
         [Summary("Unmute someone. Need admin perm & bot manage role perm")]
         //[RequireUserPermission(GuildPermission.Administrator)]
         [RequireBotPermission(GuildPermission.ManageRoles)]
-        public async Task UnMute(SocketGuildUser user)
+        public async Task UnMute(IGuildUser user)
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
             var role = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("muted"));
 
-            if (role == null || !(Context.User is SocketGuildUser userSend)
-                  || !(userSend.GuildPermissions.KickMembers
-                  || user.GuildPermissions.BanMembers
-                  || user.GuildPermissions.ManageRoles
-                  || !Utils.CanInteractUser(userSend, user)))
+            if (role == null || !(Context.User is SocketGuildUser userSend) ||
+                !(userSend.GuildPermissions.KickMembers ||
+                  user.GuildPermissions.BanMembers || user.GuildPermissions.ManageRoles))
             {
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
@@ -162,7 +125,8 @@ namespace DiscordBot.Modules
 
             await user.RemoveRoleAsync(role);
 
-            _builder.WithTitle("Logged Information")
+            var builder = new EmbedBuilder()
+                .WithTitle("Logged Information")
                 .AddField("User", $"{user.Mention}")
                 .AddField("Moderator", $"{Context.User.Mention}")
                 .AddField("Other Information", "Released from jail!!")
@@ -171,7 +135,7 @@ namespace DiscordBot.Modules
                 .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
                 .WithCurrentTimestamp()
                 .WithColor(new Color(54, 57, 62));
-            await Context.Channel.SendMessageAsync(null, false, _builder.Build());
+            await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
 
         [Command("Nuke", RunMode = RunMode.Async)]
@@ -197,15 +161,14 @@ namespace DiscordBot.Modules
                     if (response.ToString().ToLower().Equals("yes"))
                     {
                         var channel = Context.Channel;
-                        var oldChannel = (ITextChannel)channel;
+                        var oldChannel = (ITextChannel) channel;
                         var guild = Context.Guild;
 
-                        await ReplyAsync($"Nuking this channel {Context.Channel.Name} in 6.9s");
-                        await Task.Delay(6900);
+                        await ReplyAsync($"Nuking this channel {Context.Channel.Name} in 10s");
+                        await Task.Delay(10000);
 
                         await guild.CreateTextChannelAsync(oldChannel.Name, newChannel =>
                         {
-                            // Copies over all the properties of the channel to the new channel
                             newChannel.CategoryId = oldChannel.CategoryId;
                             newChannel.Topic = oldChannel.Topic;
                             newChannel.Position = oldChannel.Position;
@@ -217,6 +180,7 @@ namespace DiscordBot.Modules
                     else if (response.ToString().ToLower().Equals("no"))
                     {
                         await ReplyAsync($"Nuke cancelled on {Context.Channel.Name}");
+                        await Task.Delay(10000);
                     }
                 }
                 else
@@ -231,29 +195,30 @@ namespace DiscordBot.Modules
         [RequireBotPermission(GuildPermission.ManageRoles)]
         public async Task VerifyAll()
         {
-            //check permission from user who issued the command
             if (!(Context.User is SocketGuildUser userSend)
-                || !(userSend.GuildPermissions.ManageRoles
+                || !(userSend.GuildPermissions.KickMembers
+                     || userSend.GuildPermissions.BanMembers
+                     || userSend.GuildPermissions.ManageRoles
                      || userSend.GuildPermissions.Administrator))
             {
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
+
             await Context.Channel.SendMessageAsync($"Granting role for {Context.Guild.MemberCount} user");
-            //check for role if exists
+
             var roleVerify = Context.Guild.Roles.FirstOrDefault(x => x.Name.ToLower().Equals("verified"));
-            //if role not found, create new one with member perm
+
             if (roleVerify == null)
             {
                 if (Context.IsPrivate) return;
-                if (!(Context.User is SocketGuildUser)) return;
                 var role = await Context.Guild.CreateRoleAsync("Verified", Utils.MemPermissions, null, false, false);
-                //add newly created role for each user in server
+                if (!(Context.User is SocketGuildUser)) return;
                 foreach (var user in Context.Guild.Users) await user.AddRoleAsync(role);
                 await Context.Channel.SendMessageAsync($"Everyone is now have the role {role}!");
                 return;
             }
-            //if verify exists then add all to user
+
             if (Context.User is SocketGuildUser)
             {
                 foreach (var user in Context.Guild.Users) await user.AddRoleAsync(roleVerify);
