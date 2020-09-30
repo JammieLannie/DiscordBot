@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -23,13 +24,12 @@ namespace DiscordBot.Modules
             _config = config;
         }
 
-        [Command("ping", true)]
+        [Command("ping")]
         [Summary("Get bot latency in ms")]
         public async Task Ping()
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
-            await Context.Channel.SendMessageAsync("Bonk bonk the bot with " + Context.Message.CreatedAt.Millisecond +
-                                                   "ms");
+            await Context.Channel.SendMessageAsync("Bonk bonk the bot with " + Context.Message.CreatedAt.Millisecond + "ms");
         }
 
         [Command("help", true)]
@@ -66,16 +66,14 @@ namespace DiscordBot.Modules
                 var parameter = cmd.Parameters.Aggregate<ParameterInfo, string>(null,
                     (current, parameterInfo) =>
                         $"{(current == null ? null : current + "\n")}'{parameterInfo.Name}' [{parameterInfo.Type.Name}] - {parameterInfo.Summary ?? "No description"}");
-                builder.WithDescription(desc)
-                    .WithTitle($"Help for: {cmd.Name}")
-                    .AddField("Parameters", parameter);
+                builder.WithDescription(desc).WithTitle($"Help for: {cmd.Name}");
+                if (!string.IsNullOrEmpty(parameter)) builder.AddField("Parameters", parameter);
                 await Context.Channel.SendMessageAsync(null, false, builder.Build());
                 return;
             }
-
             foreach (var cmd in m.Commands)
-                builder.AddField($"{_config["prefix"]}{cmd.Name}", cmd.Summary ?? "No description", true);
-            builder.WithFooter(m.Commands.Count + " commands", Context.Client.CurrentUser.GetAvatarUrl());
+                builder.AddField($"{_config["prefix"]}{cmd.Name}", cmd.Summary ?? "No description", true)
+                    .WithFooter(m.Commands.Count + " commands", Context.Client.CurrentUser.GetAvatarUrl());
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
 
@@ -84,41 +82,113 @@ namespace DiscordBot.Modules
         public async Task Info(IGuildUser user = null)
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
-
-            user = (IGuildUser) (user ?? Context.User);
-
+            user = (IGuildUser)(user ?? Context.User);
             var builder = new EmbedBuilder()
                 .WithThumbnailUrl(user.GetAvatarUrl() ?? user.GetDefaultAvatarUrl())
                 .WithDescription("Basic information about yourself!")
                 .WithColor(Color.DarkTeal)
                 .AddField("User ID: ", user.Id, true)
                 .AddField("Created at ", user.CreatedAt.ToString("dd/MM/yyyy"), true)
-                .AddField("Joined at", ((SocketGuildUser) user).JoinedAt?.ToString("dd/MM/yyyy"), true)
-                .AddField("Roles", string.Join(", ", ((SocketGuildUser) user).Roles.Select(x => x.Mention)))
+                .AddField("Joined at", ((SocketGuildUser)user).JoinedAt?.ToString("dd/MM/yyyy"), true)
+                .AddField("Roles", string.Join(", ", ((SocketGuildUser)user).Roles.Select(x => x.Mention)))
                 .WithCurrentTimestamp()
                 .WithAuthor(Context.User);
-
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
 
-        [Command("mech", true)]
+        [Command("bot", true)]
+        [Summary("Get bot data")]
+        public async Task BotInfo()
+        {
+            await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
+            var builder = new EmbedBuilder()
+                .WithTitle("Bot status")
+                .WithThumbnailUrl(Context.Client.CurrentUser.GetAvatarUrl())
+                .AddField("CPU usage", Utils.GetCpuCounter() + " %", true)
+                .AddField("Ram usage", Utils.RamUsage() + " %", true)
+                .AddField("Bot ID", Context.Client.CurrentUser.Id)
+                .AddField("Owner", "**Olivia#8888** (ID: 247742975608750090)")
+                .WithCurrentTimestamp()
+                .WithColor(34, 53, 67);
+            await Context.Channel.SendMessageAsync(null, false, builder.Build());
+        }
+
+        [Command("8ball", true)]
+        [Summary("8ball like command")]
+        public async Task EightBall([Remainder] string message)
+        {
+            var builder = new EmbedBuilder()
+                .WithTitle("8Ball game")
+                .WithCurrentTimestamp()
+                .WithColor(Color.Green)
+                .WithAuthor(Context.User)
+                .WithColor(new Color(0, 255, 0))
+                .AddField("Your question", $"{message}");
+
+            var replies = new List<string>
+            {
+                "Yes",
+                "No",
+                "Maybe...",
+                "I don't know"
+            };
+
+            if (message.Length == 0)
+            {
+                builder.WithDescription("8Ball can't answer if you don't ask!!");
+            }
+            else
+            {
+                var answer = replies[new Random().Next(replies.Count - 1)];
+                switch (answer)
+                {
+                    case "Yes":
+                        {
+                            builder
+                                .AddField("Answer", $"{answer}");
+                            break;
+                        }
+                    case "No":
+                        {
+                            builder
+                                .AddField("Answer", $"{answer}");
+                            break;
+                        }
+                    case "Maybe...":
+                        {
+                            builder
+                                .AddField("Answer", $"{answer}");
+                            break;
+                        }
+                    case "I don't know":
+                        {
+                            builder
+                                .AddField("Answer", $"{answer}");
+                            break;
+                        }
+                }
+                await Context.Channel.SendMessageAsync(null, false, builder.Build());
+            }
+        }
+
+
+
+        [Command("reddit", true)]
         [Alias("reddit")]
-        [Summary("Get MechanicalKeyboards random post")]
-        public async Task MechanicalKeyboards(string subreddit = null)
+        [Summary("Get subreddit random post")]
+        public async Task RandomPost(string subreddit = null)
         {
             var client = new HttpClient();
-            var result =
-                await client.GetStringAsync(
-                    $"https://reddit.com/r/{subreddit ?? "MechanicalKeyboards"}/random.json?limit=1");
+            var result = await client.GetStringAsync(
+                    $"https://reddit.com/r/" + $"{subreddit}/random.json?limit=1");
+
             if (!result.StartsWith("["))
             {
                 await Context.Channel.SendMessageAsync("This subreddit doesn't exist!");
                 return;
             }
-
             var arr = JArray.Parse(result);
             var post = JObject.Parse(arr[0]["data"]["children"][0]["data"].ToString());
-
             var builder = new EmbedBuilder()
                 .WithImageUrl(post["url"].ToString())
                 .WithColor(new Color(33, 176, 252))
@@ -143,16 +213,15 @@ namespace DiscordBot.Modules
         public async Task Server()
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
-
             var builder = new EmbedBuilder()
                 .WithThumbnailUrl(Context.Guild.IconUrl)
                 .WithDescription("Basic information about the current server.")
                 .WithTitle($"{Context.Guild.Name} Information")
                 .WithColor(new Color(33, 176, 252))
                 .AddField("Created at", Context.Guild.CreatedAt.ToString("dd/MM/yyyy"), true)
-                .AddField("Member count", ((SocketGuild) Context.Guild).MemberCount + " members", true)
+                .AddField("Member count", ((SocketGuild)Context.Guild).MemberCount + " members", true)
                 .AddField("Online users",
-                    ((SocketGuild) Context.Guild).Users.Count(x => x.Status != UserStatus.Offline) +
+                    ((SocketGuild)Context.Guild).Users.Count(x => x.Status != UserStatus.Offline) +
                     " members", true);
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
