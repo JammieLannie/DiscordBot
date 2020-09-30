@@ -27,9 +27,7 @@ namespace DiscordBot.Services
 
         private async Task OnMessageReceived(SocketMessage arg)
         {
-            var msg = arg as SocketUserMessage;
-
-            if (msg == null || msg.Author.IsBot) return;
+            if (!(arg is SocketUserMessage msg) || msg.Author.IsBot) return;
 
             var context = new SocketCommandContext(_discord, msg);
 
@@ -38,13 +36,7 @@ namespace DiscordBot.Services
             if (msg.HasStringPrefix(_config["prefix"], ref pos) || msg.HasMentionPrefix(_discord.CurrentUser, ref pos))
             {
                 var result = await _commands.ExecuteAsync(context, pos, _provider);
-
-                if (!result.IsSuccess)
-                {
-                    var reason = result.Error;
-
-                    Console.WriteLine(reason);
-                }
+                Console.WriteLine(result.Error);
             }
         }
 

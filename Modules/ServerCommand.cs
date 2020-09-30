@@ -205,7 +205,6 @@ namespace DiscordBot.Modules
 
                         await guild.CreateTextChannelAsync(oldChannel.Name, newChannel =>
                         {
-                            // Copies over all the properties of the channel to the new channel
                             newChannel.CategoryId = oldChannel.CategoryId;
                             newChannel.Topic = oldChannel.Topic;
                             newChannel.Position = oldChannel.Position;

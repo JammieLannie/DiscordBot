@@ -10,10 +10,9 @@ namespace DiscordBot.Modules
     [Summary(":shield:")]
     public class Moderation : ModuleBase
     {
-
         [Command("purge")]
         [Summary("Purge message from channel")]
-        //[RequireUserPermission(GuildPermission.Administrator)]
+        [RequireUserPermission(GuildPermission.Administrator)]
         [RequireBotPermission(GuildPermission.ManageMessages)]
         public async Task Purge(int amount)
         {
@@ -23,14 +22,8 @@ namespace DiscordBot.Modules
                 return;
             }
 
-            if (!(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.ManageRoles)
-            {
-                await Utils.SendInvalidPerm(Context.User, Context.Channel);
-                return;
-            }
-
             var messages = (await Context.Channel.GetMessagesAsync(amount + 1).FlattenAsync()).ToList();
-            await ((SocketTextChannel)Context.Channel).DeleteMessagesAsync(messages);
+            await ((SocketTextChannel) Context.Channel).DeleteMessagesAsync(messages);
 
             var message =
                 await Context.Channel.SendMessageAsync($"{messages.Count} messages deleted successfully!");
@@ -56,8 +49,9 @@ namespace DiscordBot.Modules
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
-            var builder = new EmbedBuilder()
-                .WithTitle("Logged Information")
+            var builder = new EmbedBuilder();
+
+            builder.WithTitle("Logged Information")
                 .AddField("User", $"{userAccount.Mention}")
                 .AddField("Command issued by", $"{userSend.Mention}")
                 .WithDescription(
@@ -72,7 +66,7 @@ namespace DiscordBot.Modules
                 builder.AddField("Reason", $"{reason}")
                     .AddField("Other Information", "Can join server again")
                     .WithDescription(
-                    $"This user has been kicked from {Context.Guild.Name} by {Context.User.Username}!");
+                        $"This user has been kicked from {Context.Guild.Name} by {Context.User.Username}!");
             }
 
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
@@ -94,8 +88,9 @@ namespace DiscordBot.Modules
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
-            var builder = new EmbedBuilder()
-                .WithTitle("Logged Information")
+            var builder = new EmbedBuilder();
+
+            builder.WithTitle("Logged Information")
                 .AddField("User", $"{userAccount.Mention}")
                 .AddField("Command issued by", $"{userSend.Mention}")
                 .WithDescription(
@@ -123,9 +118,8 @@ namespace DiscordBot.Modules
         public async Task BanAll(SocketGuildUser user, [Remainder] string reason = null)
         {
             foreach (var guilds in user.MutualGuilds)
-            {
-                await guilds.AddBanAsync(user, 1, reason: $"Banned by {Context.User}. Reason: {reason}");
-            }
+                await guilds.AddBanAsync(user, 1, $"Banned by {Context.User}. Reason: {reason}");
+
             await ReplyAsync($"{user} was successfully Banned from all servers");
         }
 
@@ -135,16 +129,15 @@ namespace DiscordBot.Modules
         {
             var user = Context.User as SocketGuildUser;
 
+            if (user == null) return;
+
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
-            var role = ((IGuildUser)user)?.Guild.Roles.FirstOrDefault(x => x.Name.Equals("Verified"));
+            var role = ((IGuildUser) user)?.Guild.Roles.FirstOrDefault(x => x.Name.Equals("Verified"));
 
             var verifyUser = Context.User.Mention;
 
-            if (role == null)
-            {
-                role = await Context.Guild.CreateRoleAsync("Verified", Utils.MemPermissions, null, false, false);
-            }
+            role ??= await Context.Guild.CreateRoleAsync("Verified", Utils.MemPermissions, null, false, false);
 
             if (user.Roles.Contains(role))
             {
@@ -156,7 +149,7 @@ namespace DiscordBot.Modules
             }
             else
             {
-                await ((SocketGuildUser)Context.User).AddRoleAsync(role);
+                await ((SocketGuildUser) Context.User).AddRoleAsync(role);
 
                 var message =
                     await Context.Channel.SendMessageAsync(
@@ -176,7 +169,7 @@ namespace DiscordBot.Modules
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
-            if (((SocketCommandContext)Context).IsPrivate || role == null) return;
+            if (((SocketCommandContext) Context).IsPrivate || role == null) return;
             await Context.Guild.CreateRoleAsync(role, GuildPermissions.None, null, false, false);
         }
 
@@ -189,13 +182,15 @@ namespace DiscordBot.Modules
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
-            if (((SocketCommandContext)Context).IsPrivate || msg == null) return;
+            if (((SocketCommandContext) Context).IsPrivate || msg == null) return;
             msg = msg.ToLower();
 
             var role = user.Guild.Roles.FirstOrDefault(x =>
                 x.Name.ToLower().Equals(msg) || x.Id.ToString().Equals(msg) || x.Name.ToLower().Contains(msg));
-            var builder = new EmbedBuilder()
-                .WithTitle("Logged Information")
+            
+            var builder = new EmbedBuilder();
+
+            builder.WithTitle("Logged Information")
                 .AddField("User", $"{user.Mention}")
                 .AddField("Moderator", $"{Context.User.Mention}")
                 .WithDescription(
@@ -230,7 +225,7 @@ namespace DiscordBot.Modules
         public async Task AddRole(SocketGuildUser user, [Remainder] string msg)
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
-            if (((SocketCommandContext)Context).IsPrivate || msg == null) return;
+            if (((SocketCommandContext) Context).IsPrivate || msg == null) return;
             msg = msg.ToLower();
 
             var role = user.Guild.Roles.FirstOrDefault(x =>
@@ -242,8 +237,9 @@ namespace DiscordBot.Modules
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
-            var builder = new EmbedBuilder()
-                .WithTitle("Logged Information")
+            var builder = new EmbedBuilder();
+
+            builder.WithTitle("Logged Information")
                 .AddField("User", $"{user.Mention}")
                 .AddField("Moderator", $"{Context.User.Mention}")
                 .WithDescription(

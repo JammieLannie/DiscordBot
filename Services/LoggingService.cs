@@ -22,11 +22,10 @@ namespace DiscordBot.Services
                 Console.WriteLine($"[CommandHandler/{message.Severity}] {cmdException.Command.Aliases.First()}"
                                   + $" failed to execute in {cmdException.Context.Channel}.");
                 Console.WriteLine(cmdException);
+                return;
             }
-            else
-            {
-                Console.WriteLine($"[General/{message.Severity}] {message}");
-            }
+
+            Console.WriteLine($"[General/{message.Severity}] {message}");
         }
     }
 }
