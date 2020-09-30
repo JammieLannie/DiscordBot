@@ -80,11 +80,6 @@ namespace DiscordBot
             return ramValue;
         }
 
-        public static bool ChannelIsNsfw(ITextChannel channel)
-        {
-            return channel.IsNsfw;
-        }
-
         public static async Task SendInvalidPerm(IUser user, IMessageChannel channel)
         {
             var builder = new EmbedBuilder()
