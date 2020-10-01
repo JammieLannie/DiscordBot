@@ -93,19 +93,19 @@ namespace DiscordBot
             await channel.SendMessageAsync(null, false, builder.Build());
         }
 
-        public static int GetUserPos(SocketGuildUser u1)
+        public static int GetRolePosition(SocketGuildUser u1)
         {
             return u1.Roles.Select(r => r.Position).Prepend(0).Max();
         }
 
         public static bool CanInteractRole(SocketGuildUser user, SocketRole role)
         {
-            return GetUserPos(user) > role.Position;
+            return GetRolePosition(user) > role.Position;
         }
 
         public static bool CanInteractUser(SocketGuildUser u1, SocketGuildUser u2)
         {
-            return GetUserPos(u1) > GetUserPos(u2);
+            return GetRolePosition(u1) > GetRolePosition(u2);
         }
 
         public static string GetRandomAlphaNumeric(int length)

