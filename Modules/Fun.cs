@@ -67,8 +67,8 @@ namespace DiscordBot.Modules
             {
                 var author = Context.User;
                 var image = await NekosClient.GetSfwAsync(endpoint);
-                var fag = endpoint.ToString().Replace("_", " ");
-                await ReplyAsync(null, false, new EmbedBuilder().WithDescription(user == null || author == user ? $"{author.Mention} has {fag} themselves ?" : $"{author.Mention} has {fag} {user.Mention}!").WithImageUrl(image.FileUrl).Build());
+                var fag = endpoint.ToString().ToLower().Replace("_", " ");
+                await ReplyAsync(null, false, new EmbedBuilder().WithDescription(user == null || author == user ? $"{author.Mention} {fag}s themselves ?" : $"{author.Mention} {fag}s {user.Mention}!").WithImageUrl(image.FileUrl).Build());
             }
             catch {
                 await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));
