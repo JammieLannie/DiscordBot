@@ -21,6 +21,12 @@ namespace DiscordBot.Modules
                 await Context.Channel.SendMessageAsync("No input");
                 return;
             }
+            if (!(Context.User is SocketGuildUser userSend) 
+                || !userSend.GuildPermissions.ManageRoles )
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
 
             var messages = (await Context.Channel.GetMessagesAsync(amount + 1).FlattenAsync()).ToList();
             await ((SocketTextChannel) Context.Channel).DeleteMessagesAsync(messages);
@@ -117,6 +123,12 @@ namespace DiscordBot.Modules
         [RequireBotPermission(GuildPermission.BanMembers)]
         public async Task BanAll(SocketGuildUser user, [Remainder] string reason = null)
         {
+            if (!(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.ManageRoles ||
+                !Utils.CanInteractUser(userSend, user))
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
             foreach (var guilds in user.MutualGuilds)
                 await guilds.AddBanAsync(user, 1, $"Banned by {Context.User}. Reason: {reason}");
 
@@ -168,7 +180,11 @@ namespace DiscordBot.Modules
         public async Task CreateRole([Remainder] string role)
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
-
+            if (!(Context.User is SocketGuildUser userSend) || !userSend.GuildPermissions.ManageRoles)
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
             if (((SocketCommandContext) Context).IsPrivate || role == null) return;
             await Context.Guild.CreateRoleAsync(role, GuildPermissions.None, null, false, false);
         }

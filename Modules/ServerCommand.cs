@@ -90,15 +90,17 @@ namespace DiscordBot.Modules
                 .WithCurrentTimestamp()
                 .WithColor(new Color(54, 57, 62));
 
-            if (!(Context.User is SocketGuildUser userSend)
-                || !(userSend.GuildPermissions.KickMembers
-                     || user.GuildPermissions.BanMembers
-                     || user.GuildPermissions.ManageRoles))
+            if (!(Context.User is SocketGuildUser userSend) 
+                || !(userSend.GuildPermissions.ManageRoles 
+                     || userSend.GuildPermissions.KickMembers 
+                     || user.GuildPermissions.BanMembers 
+                     || user.GuildPermissions.ManageRoles 
+                     || Utils.CanInteractUser(userSend, (SocketGuildUser)user)))
             {
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
-
+            
             ulong roleId = 0;
 
             foreach (var gRole in Context.Guild.Roles)

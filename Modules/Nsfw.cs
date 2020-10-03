@@ -10,13 +10,21 @@ using Nekos.Net.Endpoints;
 namespace DiscordBot.Modules
 {
     [Summary(":sa:")]
-    public class NSFW : InteractiveBase
+    public class Nsfw : InteractiveBase
     {
         [Command("switch")]
         [Summary("Enable or disable nsfw")]
         [Alias("switch")]
         public async Task NsfwSwitch()
         {
+            await Context.Message.DeleteAsync();
+            if (!(Context.User is SocketGuildUser userSend)
+                || !userSend.GuildPermissions.ManageRoles)
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
+
             var channel = (ITextChannel) Context.Channel;
             if (!IsNsfwChannel()) await channel.ModifyAsync(r => r.IsNsfw = true);
             else await channel.ModifyAsync(r => r.IsNsfw = false);
@@ -27,7 +35,7 @@ namespace DiscordBot.Modules
         [Alias("pussy")]
         public async Task NekoPussy()
         {
-            await BadAtNaming(NsfwEndpoint.Pussy, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Pussy, (ITextChannel) Context.Channel);
         }
 
         [Command("lewd")]
@@ -35,8 +43,9 @@ namespace DiscordBot.Modules
         [Alias("lewds")]
         public async Task NekoLewd()
         {
-            await BadAtNaming(NsfwEndpoint.Lewd, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Lewd, (ITextChannel) Context.Channel);
         }
+
         /*
         [Command("les")]
         [Summary("Get les nsfw!!")]
@@ -59,8 +68,9 @@ namespace DiscordBot.Modules
         [Alias("cums")]
         public async Task NekoCum()
         {
-            await BadAtNaming(NsfwEndpoint.Cum, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Cum, (ITextChannel) Context.Channel);
         }
+
         /*
         [Command("classic")]
         [Summary("Get classic nsfw!!")]
@@ -75,7 +85,7 @@ namespace DiscordBot.Modules
         [Alias("boobs")]
         public async Task NekoBoob()
         {
-            await BadAtNaming(NsfwEndpoint.Boobs, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Boobs, (ITextChannel) Context.Channel);
         }
 
         [Command("bj")]
@@ -83,7 +93,7 @@ namespace DiscordBot.Modules
         [Alias("bjs")]
         public async Task NekoBj()
         {
-            await BadAtNaming(NsfwEndpoint.Bj, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Bj, (ITextChannel) Context.Channel);
         }
 
         [Command("anal")]
@@ -91,7 +101,7 @@ namespace DiscordBot.Modules
         [Alias("anals")]
         public async Task NekoAnal()
         {
-            await BadAtNaming(NsfwEndpoint.Anal, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Anal, (ITextChannel) Context.Channel);
         }
 
         [Command("nsfwnekogif")]
@@ -99,8 +109,9 @@ namespace DiscordBot.Modules
         [Alias("nsfwnekogifs")]
         public async Task NekoNsfwNekoGif()
         {
-            await BadAtNaming(NsfwEndpoint.NsfwNekoGif, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.NsfwNekoGif, (ITextChannel) Context.Channel);
         }
+
         /*
         [Command("nsfwavatar")]
         [Summary("Get nsfwavatar nsfw!!")]
@@ -115,7 +126,7 @@ namespace DiscordBot.Modules
         [Alias("yuri")]
         public async Task NekoYuri()
         {
-            await BadAtNaming(NsfwEndpoint.Yuri, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Yuri, (ITextChannel) Context.Channel);
         }
 
         [Command("trap")]
@@ -123,8 +134,9 @@ namespace DiscordBot.Modules
         [Alias("traps")]
         public async Task NekoTrap()
         {
-            await BadAtNaming(NsfwEndpoint.Trap, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Trap, (ITextChannel) Context.Channel);
         }
+
         /*
         [Command("tit")]
         [Summary("Get tits nsfw!!")]
@@ -219,7 +231,7 @@ namespace DiscordBot.Modules
         [Alias("hentais")]
         public async Task NekoHentai()
         {
-            await BadAtNaming(NsfwEndpoint.Hentai, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Hentai, (ITextChannel) Context.Channel);
         }
 
         [Command("futanari")]
@@ -227,7 +239,7 @@ namespace DiscordBot.Modules
         [Alias("futanari")]
         public async Task NekoFutanari()
         {
-            await BadAtNaming(NsfwEndpoint.Futanari, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Futanari, (ITextChannel) Context.Channel);
         }
 
         [Command("femdom")]
@@ -235,8 +247,9 @@ namespace DiscordBot.Modules
         [Alias("femdom")]
         public async Task NekoFemdom()
         {
-            await BadAtNaming(NsfwEndpoint.Femdom, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Femdom, (ITextChannel) Context.Channel);
         }
+
         /*
         [Command("feetg")]
         [Summary("Get feetg nsfw!!")]
@@ -259,8 +272,9 @@ namespace DiscordBot.Modules
         [Alias("ero", "eroge")]
         public async Task NekoEro()
         {
-            await BadAtNaming(NsfwEndpoint.Ero, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Ero, (ITextChannel) Context.Channel);
         }
+
 /*
         [Command("erok")]
         [Summary("Get erok nsfw!!")]
@@ -282,8 +296,9 @@ namespace DiscordBot.Modules
         [Alias("eyuri")]
         public async Task NekoEroYuri()
         {
-            await BadAtNaming(NsfwEndpoint.EroYuri, (ITextChannel)Context.Channel);
+            await BadAtNaming(NsfwEndpoint.EroYuri, (ITextChannel) Context.Channel);
         }
+
         /*
         [Command("cum")]
         [Summary("Get cum nsfw!!")]
@@ -303,24 +318,35 @@ namespace DiscordBot.Modules
         */
         private async Task BadAtNaming(NsfwEndpoint endpoint, ITextChannel channel)
         {
-            if (!IsNsfwChannel())
+            if (!IsNsfwChannel() && Context.User is SocketGuildUser userSend
+                                && userSend.GuildPermissions.ManageChannels)
             {
                 await ReplyAndDeleteAsync("Do you want to enable NSFW on this channel ?", false, null,
                     TimeSpan.FromSeconds(5));
                 var response = await NextMessageAsync();
-                if (response == null || response.ToString().ToLower().Equals("no")) return; 
+                if (response == null) return;
                 if (response.ToString().ToLower().Equals("yes")) await channel.ModifyAsync(r => r.IsNsfw = true);
             }
-            try
+
+            if (IsNsfwChannel())
             {
-                var author = Context.User;
-                var image = await NekosClient.GetNsfwAsync(endpoint);
-                await ReplyAsync(null, false, new EmbedBuilder().WithDescription($"{author.Mention}, here you go '{endpoint.ToString().Replace("_", " ")}'").WithImageUrl(image.FileUrl).Build());
-            }
-            catch {
-                await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));
+                try
+                {
+                    var author = Context.User;
+                    var image = await NekosClient.GetNsfwAsync(endpoint);
+                    await ReplyAsync(null, false,
+                        new EmbedBuilder()
+                            .WithDescription($"{author.Mention}, here you go '{endpoint.ToString().Replace("_", " ")}'")
+                            .WithImageUrl(image.FileUrl).Build());
+                }
+                catch
+                {
+                    await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));
+                }
             }
         }
+
         private bool IsNsfwChannel() => ((ITextChannel) Context.Channel).IsNsfw;
     }
 }
+
