@@ -100,20 +100,9 @@ namespace DiscordBot.Modules
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
-           
-            bool roleExist = false;
 
-            ulong roleId = 0;
-
-            foreach (var gRole in Context.Guild.Roles)
-            {
-                if (gRole.Name.ToLower().Equals("muted"))
-                {
-                    roleExist = true;
-                    roleId = gRole.Id;
-                }
-            }
-            if (!roleExist)
+            var mutedRole = Context.Guild.Roles.FirstOrDefault(t => t.Name.ToLower().Equals("muted"));
+            if (mutedRole == null)
             {
                 var roleCreation =
                     await Context.Guild.CreateRoleAsync("Muted", Utils.MutedPermissions, null, false, false);
@@ -124,12 +113,11 @@ namespace DiscordBot.Modules
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Error :" + e);
+                    Console.WriteLine(e);
                 }
             }
             else
             {
-                var mutedRole = Context.Guild.GetRole(roleId);
                 await user.AddRoleAsync(mutedRole);
                 await Context.Channel.SendMessageAsync(null, false, builder.Build());
             }

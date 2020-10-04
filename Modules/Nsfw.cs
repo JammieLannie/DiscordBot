@@ -25,17 +25,14 @@ namespace DiscordBot.Modules
                 return;
             }
 
-            var channel = (ITextChannel) Context.Channel;
-            if (!IsNsfwChannel()) await channel.ModifyAsync(r => r.IsNsfw = true);
-            else await channel.ModifyAsync(r => r.IsNsfw = false);
-        }
+            await ((ITextChannel)Context.Channel).ModifyAsync(r => r.IsNsfw = !r.IsNsfw.Value); }
 
         [Command("pussy")]
         [Summary("Get pussy nsfw!!")]
         [Alias("pussy")]
         public async Task NekoPussy()
         {
-            await BadAtNaming(NsfwEndpoint.Pussy, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Pussy, Context.Channel);
         }
 
         [Command("lewd")]
@@ -43,7 +40,7 @@ namespace DiscordBot.Modules
         [Alias("lewds")]
         public async Task NekoLewd()
         {
-            await BadAtNaming(NsfwEndpoint.Lewd, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Lewd, Context.Channel);
         }
 
         /*
@@ -68,7 +65,7 @@ namespace DiscordBot.Modules
         [Alias("cums")]
         public async Task NekoCum()
         {
-            await BadAtNaming(NsfwEndpoint.Cum, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Cum, Context.Channel);
         }
 
         /*
@@ -85,7 +82,7 @@ namespace DiscordBot.Modules
         [Alias("boobs")]
         public async Task NekoBoob()
         {
-            await BadAtNaming(NsfwEndpoint.Boobs, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Boobs, Context.Channel);
         }
 
         [Command("bj")]
@@ -93,7 +90,7 @@ namespace DiscordBot.Modules
         [Alias("bjs")]
         public async Task NekoBj()
         {
-            await BadAtNaming(NsfwEndpoint.Bj, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Bj, Context.Channel);
         }
 
         [Command("anal")]
@@ -101,7 +98,7 @@ namespace DiscordBot.Modules
         [Alias("anals")]
         public async Task NekoAnal()
         {
-            await BadAtNaming(NsfwEndpoint.Anal, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Anal, Context.Channel);
         }
 
         [Command("nsfwnekogif")]
@@ -109,7 +106,7 @@ namespace DiscordBot.Modules
         [Alias("nsfwnekogifs")]
         public async Task NekoNsfwNekoGif()
         {
-            await BadAtNaming(NsfwEndpoint.NsfwNekoGif, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.NsfwNekoGif, Context.Channel);
         }
 
         /*
@@ -126,7 +123,7 @@ namespace DiscordBot.Modules
         [Alias("yuri")]
         public async Task NekoYuri()
         {
-            await BadAtNaming(NsfwEndpoint.Yuri, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Yuri, Context.Channel);
         }
 
         [Command("trap")]
@@ -134,7 +131,7 @@ namespace DiscordBot.Modules
         [Alias("traps")]
         public async Task NekoTrap()
         {
-            await BadAtNaming(NsfwEndpoint.Trap, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Trap, Context.Channel);
         }
 
         /*
@@ -231,7 +228,7 @@ namespace DiscordBot.Modules
         [Alias("hentais")]
         public async Task NekoHentai()
         {
-            await BadAtNaming(NsfwEndpoint.Hentai, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Hentai, Context.Channel);
         }
 
         [Command("futanari")]
@@ -239,7 +236,7 @@ namespace DiscordBot.Modules
         [Alias("futanari")]
         public async Task NekoFutanari()
         {
-            await BadAtNaming(NsfwEndpoint.Futanari, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Futanari, Context.Channel);
         }
 
         [Command("femdom")]
@@ -247,7 +244,7 @@ namespace DiscordBot.Modules
         [Alias("femdom")]
         public async Task NekoFemdom()
         {
-            await BadAtNaming(NsfwEndpoint.Femdom, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Femdom, Context.Channel);
         }
 
         /*
@@ -272,7 +269,7 @@ namespace DiscordBot.Modules
         [Alias("ero", "eroge")]
         public async Task NekoEro()
         {
-            await BadAtNaming(NsfwEndpoint.Ero, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.Ero, Context.Channel);
         }
 
 /*
@@ -296,7 +293,7 @@ namespace DiscordBot.Modules
         [Alias("eyuri")]
         public async Task NekoEroYuri()
         {
-            await BadAtNaming(NsfwEndpoint.EroYuri, (ITextChannel) Context.Channel);
+            await BadAtNaming(NsfwEndpoint.EroYuri, Context.Channel);
         }
 
         /*
@@ -316,18 +313,17 @@ namespace DiscordBot.Modules
             await BadAtNaming(NsfwEndpoint.Blowjob, (ITextChannel)Context.Channel);
         }
         */
-        private async Task BadAtNaming(NsfwEndpoint endpoint, ITextChannel channel)
+        private async Task BadAtNaming(NsfwEndpoint endpoint, ISocketMessageChannel channel)
         {
-            if (!IsNsfwChannel() && Context.User is SocketGuildUser userSend
-                                && userSend.GuildPermissions.ManageChannels)
+            if (!IsNsfwChannel() && Context.User is SocketGuildUser userSend && userSend.GuildPermissions.ManageChannels)
             {
                 await ReplyAndDeleteAsync("Do you want to enable NSFW on this channel ?", false, null,
                     TimeSpan.FromSeconds(5));
                 var response = await NextMessageAsync();
                 if (response == null) return;
-                if (response.ToString().ToLower().Equals("yes")) await channel.ModifyAsync(r => r.IsNsfw = true);
+                if (response.ToString().ToLower().Equals("yes")) await ((ITextChannel)channel).ModifyAsync(r => r.IsNsfw = true);
             }
-
+            
             if (IsNsfwChannel())
             {
                 try
@@ -346,7 +342,7 @@ namespace DiscordBot.Modules
             }
         }
 
-        private bool IsNsfwChannel() => ((ITextChannel) Context.Channel).IsNsfw;
+        private bool IsNsfwChannel() => ((ITextChannel)Context.Channel).IsNsfw;
     }
 }
 

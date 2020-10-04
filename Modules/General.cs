@@ -134,7 +134,7 @@ namespace DiscordBot.Modules
                 "Maybe...",
                 "I don't know"
             };
-            if (message.Length == 0)
+            if (string.IsNullOrEmpty(message))
                 builder.WithDescription("8Ball can't answer if you don't ask!!");
             else
                 builder.AddField("Answer", $"{replies[new Random().Next(replies.Length - 1)]}");
