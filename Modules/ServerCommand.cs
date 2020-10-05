@@ -120,6 +120,12 @@ namespace DiscordBot.Modules
         {
             var channel = Context.Channel as SocketGuildChannel;
             if (channel==null) return;
+            if (!(Context.User is SocketGuildUser userSend)
+                || !userSend.GuildPermissions.ManageChannels)
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
             foreach (var role in Context.Guild.Roles)
             {
                 await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.DenyAll(channel)
@@ -133,8 +139,14 @@ namespace DiscordBot.Modules
         public async Task UnlockChannel()
         {
             var channel = Context.Channel as SocketGuildChannel;
+            if (channel == null) return;
+            if (!(Context.User is SocketGuildUser userSend)
+                || !userSend.GuildPermissions.ManageChannels)
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
             var mutedRole = Context.Guild.Roles.FirstOrDefault(t => t.Name.ToLower().Equals("muted"));
-
             foreach (var role in Context.Guild.Roles)
             {
                 if (mutedRole == role) continue;
