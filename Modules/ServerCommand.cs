@@ -118,8 +118,7 @@ namespace DiscordBot.Modules
         [RequireBotPermission(GuildPermission.ManageChannels)]
         public async Task LockChannel()
         {
-            var channel = Context.Channel as SocketGuildChannel;
-            if (channel==null) return;
+            if (!(Context.Channel is SocketGuildChannel channel)) return;
             if (!(Context.User is SocketGuildUser userSend)
                 || !userSend.GuildPermissions.ManageChannels)
             {
@@ -138,8 +137,7 @@ namespace DiscordBot.Modules
         [RequireBotPermission(GuildPermission.ManageChannels)]
         public async Task UnlockChannel()
         {
-            var channel = Context.Channel as SocketGuildChannel;
-            if (channel == null) return;
+            if (!(Context.Channel is SocketGuildChannel channel)) return;
             if (!(Context.User is SocketGuildUser userSend)
                 || !userSend.GuildPermissions.ManageChannels)
             {
@@ -153,7 +151,6 @@ namespace DiscordBot.Modules
                 await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.InheritAll);
             }
         }
-
 
         [Command("purge")]
         [Summary("Purge message from channel")]
@@ -242,8 +239,8 @@ namespace DiscordBot.Modules
                         var oldChannel = (ITextChannel)channel;
                         var guild = Context.Guild;
 
-                        await ReplyAsync($"Nuking this channel {Context.Channel.Name} in 6.9s");
-                        await Task.Delay(6900);
+                        await ReplyAsync($"Nuking this channel {Context.Channel.Name} in 10s");
+                        await Task.Delay(10000);
 
                         await guild.CreateTextChannelAsync(oldChannel.Name, newChannel =>
                         {
@@ -267,6 +264,98 @@ namespace DiscordBot.Modules
             }
         }
 
-       
+        [Command("inhert")]
+        [Summary("Inhert perm from category")]
+        [Alias("copy")]
+        public async Task InhertCategory()
+        {
+            if (!(Context.Channel is SocketGuildChannel channel)) return;
+            if (!(Context.User is SocketGuildUser userSend)
+                || !userSend.GuildPermissions.ManageChannels)
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
+            var mutedRole = Context.Guild.Roles.FirstOrDefault(t => t.Name.ToLower().Equals("muted"));
+            foreach (var role in Context.Guild.Roles)
+            {
+                if (mutedRole == role) continue;
+                await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.InheritAll);
+            }
+        }
+
+        [Command("newch")]
+        [Summary("create a new channel")]
+        [Alias("new")]
+        public async Task CreateChannel()
+        {
+
+            if (!(Context.Channel is SocketGuildChannel channel)) return;
+            if (!(Context.User is SocketGuildUser userSend)
+                || !userSend.GuildPermissions.ManageChannels)
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
+
+            var channelCreation = Context.Guild;
+
+            var builder = new EmbedBuilder()
+                .WithTitle("**Choose your option**")
+                .WithDescription("1. Create a new channel with a new / existing category\n"
+                                 +"2. Create a new channel with no category\n")
+                .WithCurrentTimestamp()
+                .WithColor(new Color(54, 57, 62));
+            await Context.Channel.SendMessageAsync(null, false, builder.Build());
+            var response = await NextMessageAsync();
+            if (response != null && (response.ToString()=="1" || response.ToString()=="2"))
+            {
+                try 
+                {   
+                    await ReplyAndDeleteAsync("Name of the new channel please?", false, null, TimeSpan.FromSeconds(10));
+                    var name = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
+                    await Context.Channel.DeleteMessageAsync(name);
+                    if (name == null) return;
+                    await ReplyAndDeleteAsync("Topic of the new channel please?", false, null, TimeSpan.FromSeconds(10));
+                    var topic = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
+                    await Context.Channel.DeleteMessageAsync(topic);
+                    if (topic == null) return;
+                    switch (response.ToString())
+                    {
+                        case "1":
+                            await ReplyAndDeleteAsync("Category name please ?", false, null, TimeSpan.FromSeconds(10));
+                            var categoryName = await NextMessageAsync(true, true, TimeSpan.FromSeconds(10));
+                            await Context.Channel.DeleteMessageAsync(categoryName);
+                            var categoryNameChecker = Context.Guild.CategoryChannels.FirstOrDefault(
+                                c => c.Name.Equals(categoryName.ToString()));
+                            if (categoryNameChecker != null)
+                            {
+                                await channelCreation.CreateTextChannelAsync($"{name}", r => r.CategoryId = categoryNameChecker.Id);
+                                await ReplyAndDeleteAsync($"Channel {name} created at {DateAndTime.Now}\n" +
+                                                          $"and is in category {categoryNameChecker}!", false, null, TimeSpan.FromSeconds(7));
+                            }
+                            else
+                            {
+                                await channelCreation.CreateCategoryChannelAsync($"{categoryName}", r => r.Position = 0);
+                                await channelCreation.CreateTextChannelAsync($"{name}", r => r.CategoryId = categoryName.Id);
+                                await ReplyAndDeleteAsync($"Channel {name} created at {DateAndTime.Now}\n" +
+                                                          $"and is in category {categoryName}!", false, null, TimeSpan.FromSeconds(7));
+                            }
+                            break;
+                        case "2":
+                            await channelCreation.CreateTextChannelAsync($"{name}", r => r.Topic = topic.ToString());
+                            await ReplyAndDeleteAsync($"Channel {name} created at {DateAndTime.Now} !", false, null, TimeSpan.FromSeconds(7));
+                            break;
+                        default:
+                            await ReplyAndDeleteAsync("Error !", false, null, TimeSpan.FromSeconds(5));
+                            break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Logging : Error happened at choice {response} ! at {DateAndTime.Now}!", e);
+                }
+            }
+        }
     }
 }

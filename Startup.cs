@@ -8,6 +8,7 @@ using Discord.WebSocket;
 using DiscordBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using OsuSharp;
 
 namespace DiscordBot
 {
@@ -63,6 +64,10 @@ namespace DiscordBot
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<StartupService>()
                 .AddSingleton<InteractiveService>()
+                //.AddSingleton<OsuService>(new OsuClient(new OsuSharpConfiguration
+                //{
+                //    ApiKey = 
+                //}))
                 .AddSingleton(Configuration);
         }
     }

@@ -146,7 +146,7 @@ namespace DiscordBot.Modules
         //[RequireUserPermission(GuildPermission.Administrator)]
         [RequireBotPermission(GuildPermission.KickMembers)]
         [RequireBotPermission(GuildPermission.BanMembers)]
-        public async Task Ban(SocketGuildUser userAccount, [Remainder] string reason = null)
+        public async Task Ban(SocketGuildUser userAccount, [Remainder] string reason = "")
         {
             await Context.Channel.DeleteMessageAsync(Context.Message);
 
@@ -177,6 +177,51 @@ namespace DiscordBot.Modules
             }
 
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
+        }
+
+        [Command("Ban")]
+        [Description("Ban someone's ass")]
+        [Summary("Ban someone. Need admin perm and bot ban perm")]
+
+        public async Task Ban(ulong id, [Remainder] string reason = "")
+        {
+            try
+            {
+                await Context.Channel.DeleteMessageAsync(Context.Message);
+
+                if (!(Context.User is SocketGuildUser userSend) 
+                    || !userSend.GuildPermissions.ManageRoles)
+                {
+                    await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                    return;
+                }
+                await Context.Guild.AddBanAsync(id, 0, reason);
+                var user = Context.Guild.GetUser(id);
+                var builder = new EmbedBuilder();
+
+                builder.WithTitle("Logged Information")
+                    .AddField("User", $"{user.Mention}")
+                    .AddField("Command issued by", $"{userSend.Mention}")
+                    .WithDescription(
+                        $"You can't ban this {user.Mention} from {Context.Guild.Name}")
+                    .WithFooter($"{Context.User.Username}", Context.User.GetAvatarUrl())
+                    .WithCurrentTimestamp()
+                    .WithColor(new Color(54, 57, 62));
+
+                if (userSend.GuildPermissions.BanMembers)
+                {
+                    await user.BanAsync(0, reason);
+                    builder.AddField("Reason", $"{reason}")
+                        .AddField("Other Information", "Can't join server again")
+                        .WithDescription(
+                            $"This user has been banned from {Context.Guild.Name} by {Context.User.Username}!");
+                }
+                await Context.Channel.SendMessageAsync(null, false, builder.Build());
+            }
+            catch (Exception)
+            {
+                await ReplyAsync("User either not found or is already banned");
+            }
         }
 
         [Command("banserver")]

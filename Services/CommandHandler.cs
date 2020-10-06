@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -40,10 +41,10 @@ namespace DiscordBot.Services
             }
         }
 
-
         private async Task OnReady()
         {
-            await _discord.SetGameAsync("Dit Nhau Voi Olivia");
+            await _discord.SetGameAsync("Olivia");
+            await _discord.SetStatusAsync(status: UserStatus.DoNotDisturb);
             Console.WriteLine($"Connected as {_discord.CurrentUser.Username}#{_discord.CurrentUser.Discriminator}");
         }
     }
