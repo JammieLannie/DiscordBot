@@ -1,8 +1,12 @@
 ﻿using System;
+using System.ComponentModel.Design;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
+using GiphyDotNet;
+using GiphyDotNet.Manager;
+using GiphyDotNet.Model.Parameters;
 using Nekos.Net;
 using Nekos.Net.Endpoints;
 
