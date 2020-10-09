@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
@@ -25,7 +26,7 @@ namespace DiscordBot.Modules
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
-            if (((SocketCommandContext)Context).IsPrivate || role == null) return;
+            if (Context.IsPrivate || role == null) return;
             await Context.Guild.CreateRoleAsync(role, GuildPermissions.None, null, false, false);
         }
 
@@ -38,7 +39,7 @@ namespace DiscordBot.Modules
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
 
-            if (((SocketCommandContext)Context).IsPrivate || msg == null) return;
+            if (Context.IsPrivate || msg == null) return;
             msg = msg.ToLower();
 
             var role = user.Guild.Roles.FirstOrDefault(x =>
@@ -81,7 +82,7 @@ namespace DiscordBot.Modules
         public async Task AddRole(SocketGuildUser user, [Remainder] string msg)
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
-            if (((SocketCommandContext)Context).IsPrivate || msg == null) return;
+            if (Context.IsPrivate || msg == null) return;
             msg = msg.ToLower();
 
             var role = user.Guild.Roles.FirstOrDefault(x =>
@@ -125,11 +126,19 @@ namespace DiscordBot.Modules
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
+            var role = Context.Guild.EveryoneRole;
+            await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.DenyAll(channel)
+                .Modify(viewChannel: PermValue.Allow, readMessageHistory: PermValue.Allow));
+            var builder = new EmbedBuilder()
+                .WithDescription("`Channel locked");
+            await ReplyAsync(null, false, builder.Build());
+            /*
             foreach (var role in Context.Guild.Roles)
             {
                 await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.DenyAll(channel)
                     .Modify(viewChannel: PermValue.Allow, readMessageHistory: PermValue.Allow));
             }
+            */
         }
 
         [Command("unlock",true)]
@@ -144,12 +153,19 @@ namespace DiscordBot.Modules
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
+            var role = Context.Guild.EveryoneRole;
+            await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.InheritAll);
+            var builder = new EmbedBuilder()
+                .WithDescription("`Channel unlocked");
+            await ReplyAsync(null, false, builder.Build());
+            /*
             var mutedRole = Context.Guild.Roles.FirstOrDefault(t => t.Name.ToLower().Equals("muted"));
             foreach (var role in Context.Guild.Roles)
             {
                 if (mutedRole == role) continue;
                 await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.InheritAll);
             }
+            */
         }
 
         [Command("purge")]
@@ -194,15 +210,13 @@ namespace DiscordBot.Modules
                     {
                         if (roles.ToString().ToLower().Equals("muted"))
                         {
-                            Console.WriteLine($"skipped {roles}");
                             continue;
                         }
-                        Console.WriteLine($"Role : {roles}");
                         await roles.ModifyAsync(r => r.Permissions = Utils.MemPermissions);
                     }
                     catch
                     {
-                        Console.WriteLine($"{roles} is the same or higher than bot!!");
+                        Console.WriteLine($"{roles} is higher or equals bot's");
                     }
                 }
                 await Context.Channel.SendMessageAsync("Mention disabled on all non-powered roles");
@@ -319,7 +333,11 @@ namespace DiscordBot.Modules
                     {
                         case "1":
                             var categoryName = await CheckCategory();
-                            if (categoryName == null) return;
+                            if (categoryName == null) 
+                            {
+                                await ReplyAndDeleteAsync($"This category doesn't exist in this server", false, null, TimeSpan.FromSeconds(7));
+                                return;
+                            }
                             var categoryNameChecker = Context.Guild.CategoryChannels.FirstOrDefault(
                                 c => c.Name == categoryName.ToString().ToLower())?.Id;
                             if (categoryNameChecker != null)
@@ -337,6 +355,13 @@ namespace DiscordBot.Modules
                                     r => r.Position = 0);
                                 var categoryCreated = Context.Guild.CategoryChannels.FirstOrDefault(
                                     c => c.Name == categoryName.ToString().ToLower())?.Id;
+                                if (categoryCreated == null)
+                                {
+                                    await ReplyAndDeleteAsync(
+                                        "Can't find the category created ? Maybe your server is full!", false, null,
+                                        TimeSpan.FromSeconds(7));
+                                    return;
+                                }
                                 var createNewChannel = await channelCreation.CreateTextChannelAsync($"{channelName}",
                                     r => r.CategoryId = categoryCreated);
                                 await createNewChannel.ModifyAsync(r => r.Topic = topic.ToString());
@@ -364,6 +389,90 @@ namespace DiscordBot.Modules
             {
                 await ReplyAsync($"{Context.User.Mention}, command timed out...!");
             }
+        }
+
+        [Command("delch")]
+        [Summary("Delete a specifics channel")]
+        [Alias("delet", "delete")]
+        public async Task DeleteChannel()
+        {
+            if (!(Context.Channel is SocketGuildChannel channel)) return;
+            if (!(Context.User is SocketGuildUser userSend)
+                || !userSend.GuildPermissions.ManageChannels)
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
+            var builder = new EmbedBuilder()
+                .WithTitle("**Choose your option**")
+                .WithDescription("1. Delete channel in a existing category\n"
+                                 + "2. Delete category and its child\n"
+                                 + "3. Delete category only")
+                .WithCurrentTimestamp()
+                .WithColor(new Color(54, 57, 62));
+            await ReplyAndDeleteAsync(null, false, builder.Build(), TimeSpan.FromSeconds(10));
+            var response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(7));
+            await Context.Channel.DeleteMessageAsync(response);
+            if (response == null) return;
+            if ((response.ToString() == "1" || response.ToString() == "2") || response.ToString() == "3")
+            {
+                try
+                {
+                    var categoryName = await CheckCategory();
+                    if (categoryName == null) return;
+                    var categoryNameChecker = Context.Guild.CategoryChannels.FirstOrDefault(
+                        c => c.Name == categoryName.ToString().ToLower());
+                    if (categoryNameChecker == null)
+                    {
+                        await ReplyAndDeleteAsync($"This category doesn't exist in this server", false, null, TimeSpan.FromSeconds(7));
+                        return;
+                    }
+                    switch (response.ToString())
+                    {
+                        //Delete channel in a existing category
+                        case "1":
+                            var channelChannelExist = await CheckChannelExist();
+                            if (channelChannelExist == null)
+                            {
+                                await ReplyAndDeleteAsync($"This channel doesn't exist in this server", false, null, TimeSpan.FromSeconds(7));
+                                return;
+                            }
+                            else
+                            {
+                                var channelChecker = Context.Guild.Channels.FirstOrDefault(
+                                    c => c.Name == channelChannelExist.ToString().ToLower());
+                                if (channelChecker == null) return;
+                                await channelChecker.DeleteAsync();
+                            }
+                            break;
+                        //2. Delete category and its child
+                        case "2":
+                            var child = categoryNameChecker.Channels;
+                            foreach (var channelDeletion in child)
+                                await channelDeletion.DeleteAsync();
+                            await categoryNameChecker.DeleteAsync();
+                            await ReplyAndDeleteAsync($"{categoryNameChecker} and its child has been deleted", false, null, TimeSpan.FromSeconds(7));
+                            break;
+                        //3. Delete category only
+                        case "3":
+                            await categoryNameChecker.DeleteAsync();
+                            await ReplyAndDeleteAsync($"{categoryNameChecker} and has been deleted", false, null, TimeSpan.FromSeconds(7));
+                            break;
+                    }
+                } catch (Exception e) 
+                {
+                    Console.WriteLine($"{e}");
+                }
+            }
+        }
+
+        private async Task<SocketMessage> CheckChannelExist()
+        {
+            await ReplyAndDeleteAsync("Name of the channel you want to delete please ?", false, null, TimeSpan.FromSeconds(7));
+            var channelName = await NextMessageAsync(true, true, TimeSpan.FromSeconds(7));
+            if (channelName == null) return null;
+            await Context.Channel.DeleteMessageAsync(channelName);
+            return channelName;
         }
 
         private async Task<SocketMessage> CheckChannelName()
