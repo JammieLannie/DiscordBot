@@ -14,7 +14,7 @@ namespace DiscordBot.Modules
     [Summary(":b:")]
     public class ServerCommand : InteractiveBase
     {
-        [Command("Create")]
+        [Command("create")]
         [Summary("Create a new role")]
         [RequireBotPermission(GuildPermission.Administrator)]
         [RequireUserPermission(GuildPermission.ManageRoles)]
@@ -301,8 +301,10 @@ namespace DiscordBot.Modules
         [Command("newch")]
         [Summary("create a new channel")]
         [Alias("new")]
+        [RequireBotPermission(GuildPermission.ManageChannels)]
         public async Task CreateChannel()
         {
+            await Context.Message.DeleteAsync();
             if (!(Context.Channel is SocketGuildChannel channel)) return;
             if (!(Context.User is SocketGuildUser userSend)
                 || !userSend.GuildPermissions.ManageChannels)
@@ -319,8 +321,8 @@ namespace DiscordBot.Modules
                 .WithColor(new Color(54, 57, 62));
             await ReplyAndDeleteAsync(null, false, builder.Build(), TimeSpan.FromSeconds(10));
             var response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(7));
-            await Context.Channel.DeleteMessageAsync(response);
             if (response == null) return;
+            await Context.Channel.DeleteMessageAsync(response);
             if ((response.ToString() == "1" || response.ToString() == "2"))
             {
                 try
@@ -392,10 +394,12 @@ namespace DiscordBot.Modules
         }
 
         [Command("delch")]
-        [Summary("Delete a specifics channel")]
+        [Summary("Delete a specifics channel / categories")]
         [Alias("delet", "delete")]
+        [RequireBotPermission(GuildPermission.ManageChannels)]
         public async Task DeleteChannel()
         {
+            await Context.Message.DeleteAsync();
             if (!(Context.Channel is SocketGuildChannel channel)) return;
             if (!(Context.User is SocketGuildUser userSend)
                 || !userSend.GuildPermissions.ManageChannels)
@@ -412,41 +416,37 @@ namespace DiscordBot.Modules
                 .WithColor(new Color(54, 57, 62));
             await ReplyAndDeleteAsync(null, false, builder.Build(), TimeSpan.FromSeconds(10));
             var response = await NextMessageAsync(true, true, TimeSpan.FromSeconds(7));
-            await Context.Channel.DeleteMessageAsync(response);
             if (response == null) return;
+            await Context.Channel.DeleteMessageAsync(response);
             if ((response.ToString() == "1" || response.ToString() == "2") || response.ToString() == "3")
             {
                 try
                 {
-                    var categoryName = await CheckCategory();
-                    if (categoryName == null) return;
-                    var categoryNameChecker = Context.Guild.CategoryChannels.FirstOrDefault(
-                        c => c.Name == categoryName.ToString().ToLower());
-                    if (categoryNameChecker == null)
-                    {
-                        await ReplyAndDeleteAsync($"This category doesn't exist in this server", false, null, TimeSpan.FromSeconds(7));
-                        return;
-                    }
+                    
                     switch (response.ToString())
                     {
                         //Delete channel in a existing category
                         case "1":
                             var channelChannelExist = await CheckChannelExist();
                             if (channelChannelExist == null)
-                            {
                                 await ReplyAndDeleteAsync($"This channel doesn't exist in this server", false, null, TimeSpan.FromSeconds(7));
-                                return;
-                            }
                             else
                             {
                                 var channelChecker = Context.Guild.Channels.FirstOrDefault(
                                     c => c.Name == channelChannelExist.ToString().ToLower());
                                 if (channelChecker == null) return;
                                 await channelChecker.DeleteAsync();
+                                await ReplyAndDeleteAsync($"{channelChecker} has been deleted", false, null, TimeSpan.FromSeconds(7));
                             }
                             break;
                         //2. Delete category and its child
                         case "2":
+                            var categoryNameChecker = await CategoryNameChecker();
+                            if (categoryNameChecker == null)
+                            {
+                                await ReplyAndDeleteAsync($"This category doesn't exist in this server", false, null, TimeSpan.FromSeconds(7));
+                                return;
+                            }
                             var child = categoryNameChecker.Channels;
                             foreach (var channelDeletion in child)
                                 await channelDeletion.DeleteAsync();
@@ -455,8 +455,14 @@ namespace DiscordBot.Modules
                             break;
                         //3. Delete category only
                         case "3":
+                            categoryNameChecker = await CategoryNameChecker();
+                            if (categoryNameChecker == null)
+                            {
+                                await ReplyAndDeleteAsync($"This category doesn't exist in this server", false, null, TimeSpan.FromSeconds(7));
+                                return;
+                            }
                             await categoryNameChecker.DeleteAsync();
-                            await ReplyAndDeleteAsync($"{categoryNameChecker} and has been deleted", false, null, TimeSpan.FromSeconds(7));
+                            await ReplyAndDeleteAsync($"{categoryNameChecker} has been deleted", false, null, TimeSpan.FromSeconds(7));
                             break;
                     }
                 } catch (Exception e) 
@@ -464,6 +470,14 @@ namespace DiscordBot.Modules
                     Console.WriteLine($"{e}");
                 }
             }
+        }
+
+        private async Task<SocketCategoryChannel> CategoryNameChecker()
+        {
+            var categoryName = await CheckCategory();
+            var categoryNameChecker = Context.Guild.CategoryChannels.FirstOrDefault(
+                c => c.Name == categoryName.ToString().ToLower());
+           return categoryNameChecker;
         }
 
         private async Task<SocketMessage> CheckChannelExist()

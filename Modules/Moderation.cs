@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoMapper.Mappers;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
@@ -12,6 +13,65 @@ namespace DiscordBot.Modules
     [Summary(":shield:")]
     public class Moderation : InteractiveBase
     {
+        [Command("voice")]
+        [Description("toggle mute state")]
+        [Summary("toggle mute state")]
+        [Alias("vc")]
+        [RequireBotPermission(GuildPermission.MuteMembers)]
+        public async Task Voice(IGuildUser user)
+        {
+            var voiceChannel = Context.Guild.VoiceChannels;
+            if (voiceChannel == null) return;
+            foreach (var channels in voiceChannel)
+            {
+                foreach (var toggleUser in channels.Users)
+                {
+                    if (toggleUser != user) continue;
+                    if (user.IsMuted) await user.ModifyAsync(r => r.Mute = false);
+                    else await user.ModifyAsync(r => r.Mute = true);
+                }
+            }
+        }
+
+        [Command("deafen")]
+        [Description("toggle deafen state")]
+        [Summary("toggle deafen state")]
+        [Alias("df")]
+        [RequireBotPermission(GuildPermission.DeafenMembers)]
+        public async Task Deafen(IGuildUser user)
+        {
+            var voiceChannel = Context.Guild.VoiceChannels;
+            if (voiceChannel == null) return;
+            foreach (var channels in voiceChannel)
+            {
+                foreach (var toggleUser in channels.Users)
+                {
+                    if (toggleUser != user) continue;
+                    if (user.IsDeafened) await user.ModifyAsync(r => r.Deaf = false);
+                    else await user.ModifyAsync(r => r.Deaf = true);
+                }
+            }
+        }
+
+        [Command("disconnect")]
+        [Description("disconnect from voice")]
+        [Summary("disconnect user from voice")]
+        [Alias("dc")]
+        [RequireBotPermission(GuildPermission.Administrator)]
+        public async Task Disconnect(IGuildUser user)
+        {
+            var voiceChannel = Context.Guild.VoiceChannels;
+            if (voiceChannel == null) return;
+            foreach (var channels in voiceChannel)
+            {
+                foreach (var toggleUser in channels.Users)
+                {
+                    if (toggleUser == user)
+                        await user.VoiceChannel.DisconnectAsync();
+                }
+            }
+        }
+
 
         [Command("mute")]
         [Description("Takeaway someone muted roles")]
@@ -21,7 +81,6 @@ namespace DiscordBot.Modules
         public async Task Mute(IGuildUser user)
         {
             await Context.Channel.DeleteMessageAsync(Context.Message).ConfigureAwait(false);
-
             var builder = new EmbedBuilder()
                 .WithTitle("Logged Information")
                 .AddField("User", $"{user.Mention}")
@@ -107,7 +166,7 @@ namespace DiscordBot.Modules
         //[RequireUserPermission(GuildPermission.Administrator)]
         [RequireBotPermission(GuildPermission.KickMembers)]
         [RequireBotPermission(GuildPermission.BanMembers)]
-        public async Task Kick(SocketGuildUser userAccount, [Remainder] string reason = null)
+        public async Task Kick(SocketGuildUser userAccount, [Remainder] string reason = "")
         {
             await Context.Channel.DeleteMessageAsync(Context.Message);
 
@@ -134,7 +193,8 @@ namespace DiscordBot.Modules
                 builder.AddField("Reason", $"{reason}")
                     .AddField("Other Information", "Can join server again")
                     .WithDescription(
-                        $"This user has been kicked from {Context.Guild.Name} by {Context.User.Username}!");
+                        $"This user has been kicked from {Context.Guild.Name} by {Context.User.Username}!")
+                    .AddField($"Reason", $"{reason}" );
             }
 
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
@@ -179,7 +239,7 @@ namespace DiscordBot.Modules
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
 
-        [Command("Ban")]
+        [Command("ban")]
         [Description("Ban someone's ass")]
         [Summary("Ban someone. Need admin perm and bot ban perm")]
 
@@ -259,24 +319,11 @@ namespace DiscordBot.Modules
             role ??= await Context.Guild.CreateRoleAsync("Verified", Utils.MemPermissions, null, false, false);
 
             if (user.Roles.Contains(role))
-            {
-                var message = await Context.Channel.SendMessageAsync($"{verifyUser} has already verified");
-
-                await Task.Delay(5000);
-
-                await message.DeleteAsync();
-            }
+                await ReplyAndDeleteAsync($"{verifyUser} has already verified", false, null, TimeSpan.FromSeconds(7));
             else
             {
                 await ((SocketGuildUser) Context.User).AddRoleAsync(role);
-
-                var message =
-                    await Context.Channel.SendMessageAsync(
-                        $"{verifyUser} has been verified\n You can now chat with others");
-
-                await Task.Delay(5000);
-
-                await message.DeleteAsync();
+                await ReplyAndDeleteAsync($"{verifyUser} has been verified\n You can now chat with others", false, null, TimeSpan.FromSeconds(7));
             }
         }
 

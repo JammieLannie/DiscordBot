@@ -24,8 +24,11 @@ namespace DiscordBot.Modules
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
-
-            await ((ITextChannel)Context.Channel).ModifyAsync(r => r.IsNsfw = !r.IsNsfw.Value); }
+            var channel = (ITextChannel)Context.Channel;
+            if (!IsNsfwChannel()) await channel.ModifyAsync(r => r.IsNsfw = true);
+            else await channel.ModifyAsync(r => r.IsNsfw = false);
+            //await ((ITextChannel)Context.Channel).ModifyAsync(r => r.IsNsfw = !r.IsNsfw.Value);
+        } 
 
         [Command("pussy")]
         [Summary("Get pussy nsfw!!")]
