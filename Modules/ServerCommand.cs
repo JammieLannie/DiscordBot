@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Linq;
-using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
@@ -130,7 +130,7 @@ namespace DiscordBot.Modules
             await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.DenyAll(channel)
                 .Modify(viewChannel: PermValue.Allow, readMessageHistory: PermValue.Allow));
             var builder = new EmbedBuilder()
-                .WithDescription("`Channel locked");
+                .WithDescription("`Channel locked`");
             await ReplyAsync(null, false, builder.Build());
             /*
             foreach (var role in Context.Guild.Roles)
@@ -156,7 +156,7 @@ namespace DiscordBot.Modules
             var role = Context.Guild.EveryoneRole;
             await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.InheritAll);
             var builder = new EmbedBuilder()
-                .WithDescription("`Channel unlocked");
+                .WithDescription("`Channel unlocked`");
             await ReplyAsync(null, false, builder.Build());
             /*
             var mutedRole = Context.Guild.Roles.FirstOrDefault(t => t.Name.ToLower().Equals("muted"));
@@ -167,6 +167,27 @@ namespace DiscordBot.Modules
             }
             */
         }
+
+        [Command("runlock", true)]
+        [Summary("unlock channel")]
+        [Alias("rul")]
+        [RequireBotPermission(GuildPermission.ManageChannels)]
+        public async Task UnlockChannelRemote(SocketGuildChannel channel)
+        {
+            if (!(Context.User is SocketGuildUser userSend)
+                || !userSend.GuildPermissions.ManageChannels)
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
+            var role = Context.Guild.EveryoneRole;
+            await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.InheritAll);
+            var builder = new EmbedBuilder()
+                .WithDescription($"`Channel {channel} unlocked`");
+            await ReplyAsync(null, false, builder.Build());
+
+        }
+
 
         [Command("purge")]
         [Summary("Purge message from channel")]
@@ -239,36 +260,47 @@ namespace DiscordBot.Modules
                 await Utils.SendInvalidPerm(Context.User, Context.Channel);
                 return;
             }
-
             if (userSend.GuildPermissions.Administrator)
             {
-                await ReplyAndDeleteAsync("Are you sure you want to nuke this channel ?",
+                await ReplyAndDeleteAsync($"{Context.User.Mention}, Which channel would you like to nuke ?",
                     timeout: TimeSpan.FromSeconds(15));
-                var response = await NextMessageAsync();
-                if (response != null)
+                var nukeChannel = await NextMessageAsync(timeout: TimeSpan.FromSeconds(10));
+                if (nukeChannel != null)
                 {
-                    if (response.ToString().ToLower().Equals("yes"))
+                    var test = nukeChannel.ToString().Replace("<", "").Replace("#", "").Replace(">", "");
+                    var channelId = Convert.ToUInt64(test);
+                    var checkChannel = Context.Guild.Channels.FirstOrDefault(
+                        c => c.Id == channelId);
+                    if (checkChannel == null) return;
+                    var oldChannel = (ITextChannel)checkChannel;
+                    var guild = Context.Guild;
+                    await ReplyAndDeleteAsync($"Are you sure you want to nuke <#{checkChannel.Id}> ?",
+                        timeout: TimeSpan.FromSeconds(10));
+                    var response = await NextMessageAsync(timeout: TimeSpan.FromSeconds(10));
+                    if (response != null)
                     {
-                        var channel = Context.Channel;
-                        var oldChannel = (ITextChannel)channel;
-                        var guild = Context.Guild;
-
-                        await ReplyAsync($"Nuking this channel {Context.Channel.Name} in 10s");
-                        await Task.Delay(10000);
-
-                        await guild.CreateTextChannelAsync(oldChannel.Name, newChannel =>
+                        if (response.ToString().ToLower().Equals("yes"))
                         {
-                            newChannel.CategoryId = oldChannel.CategoryId;
-                            newChannel.Topic = oldChannel.Topic;
-                            newChannel.Position = oldChannel.Position;
-                            newChannel.SlowModeInterval = oldChannel.SlowModeInterval;
-                            newChannel.IsNsfw = oldChannel.IsNsfw;
-                        });
-                        await oldChannel.DeleteAsync();
-                    }
-                    else if (response.ToString().ToLower().Equals("no"))
-                    {
-                        await ReplyAsync($"Nuke cancelled on {Context.Channel.Name}");
+                            await ReplyAndDeleteAsync($"Nuking channel <#{checkChannel.Id}> in 10s", timeout: TimeSpan.FromSeconds(10));
+                            await Task.Delay(10000);
+                            await guild.CreateTextChannelAsync($"{checkChannel.Name}", newChannel =>
+                            {
+                                newChannel.CategoryId = oldChannel.CategoryId;
+                                newChannel.Topic = oldChannel.Topic;
+                                newChannel.Position = oldChannel.Position;
+                                newChannel.SlowModeInterval = oldChannel.SlowModeInterval;
+                                newChannel.IsNsfw = oldChannel.IsNsfw;
+                            });
+                            await oldChannel.DeleteAsync();
+                        }
+                        else if (response.ToString().ToLower().Equals("no"))
+                        {
+                            await ReplyAsync($"Nuke cancelled on {checkChannel.Id}");
+                        }
+                        else
+                        {
+                            await ReplyAsync($"{Context.User.Mention}, command timed out...");
+                        }
                     }
                 }
                 else
@@ -277,7 +309,7 @@ namespace DiscordBot.Modules
                 }
             }
         }
-
+        /*
         [Command("inhert")]
         [Summary("Inhert perm from category")]
         [Alias("copy")]
@@ -297,6 +329,130 @@ namespace DiscordBot.Modules
                 await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.InheritAll);
             }
         }
+        */
+
+        [Command("tempvc")]
+        [Summary("create a tempvc voice channel")]
+        [Alias("tvc")]
+        [RequireBotPermission(GuildPermission.ManageChannels)]
+        public async Task CreateTempVoiceChannel()
+        {
+            await Context.Message.DeleteAsync();
+            if (!(Context.Channel is SocketGuildChannel channel)) return;
+            if (!(Context.User is SocketGuildUser userSend)
+                || !userSend.GuildPermissions.ManageChannels)
+            {
+                await Utils.SendInvalidPerm(Context.User, Context.Channel);
+                return;
+            }
+            var guild = Context.Guild;
+            SocketMessage voiceChannelName = await CheckVoiceChannelName();
+            if (voiceChannelName == null) return;
+            var categoryName = await CheckCategory();
+            if (categoryName == null) return;
+            var categoryNameChecker = guild.CategoryChannels.FirstOrDefault(
+                c => c.Name == categoryName.ToString().ToLower())?.Id;
+            if (categoryNameChecker != null)
+            {
+                var createNewVoiceChannelCategory = await guild.CreateVoiceChannelAsync($"{voiceChannelName}",
+                    r => r.CategoryId = categoryNameChecker);
+                await createNewVoiceChannelCategory.ModifyAsync(r => {
+                    r.UserLimit = 1;
+                    r.Position = 0;
+                    r.Bitrate = 96000;
+                });
+                var voiceIdCategory = createNewVoiceChannelCategory.Id;
+                var tempVoiceChannelCategory = Context.Guild.VoiceChannels.
+                    FirstOrDefault(prop => prop.Id == voiceIdCategory);
+                if (tempVoiceChannelCategory == null) return;
+                await ReplyAndDeleteAsync($"`Voice channel [{tempVoiceChannelCategory}] created, you have 20 secs to join!`",
+                    false, null, TimeSpan.FromSeconds(10));
+                await Task.Delay(20000);
+                do
+                {
+                } while (tempVoiceChannelCategory.Users.Count != 0);
+                await tempVoiceChannelCategory.DeleteAsync();
+            }
+            else
+            {
+                var tempCategoryChannel = await guild.CreateCategoryChannelAsync($"{categoryName}",
+                    r => r.Position = 0);
+                categoryNameChecker = guild.CategoryChannels.FirstOrDefault(
+                    c => c.Name == categoryName.ToString().ToLower())?.Id;
+                if (categoryNameChecker == null) return;
+                var createNewChannel = await guild.CreateVoiceChannelAsync($"{voiceChannelName}",
+                    r => r.CategoryId = categoryNameChecker);
+                await createNewChannel.ModifyAsync(r => {
+                    r.UserLimit = 1;
+                    r.Position = 0;
+                    r.Bitrate = 96000;
+                });
+                var voiceId = createNewChannel.Id;
+                var tempVoiceChannel = Context.Guild.VoiceChannels.
+                    FirstOrDefault(prop => prop.Id == voiceId);
+                if (tempVoiceChannel == null) return;
+                await ReplyAndDeleteAsync($"`Voice channel [{tempVoiceChannel}] created, you have 20 secs to join!`",
+                    false, null, TimeSpan.FromSeconds(10));
+                await Task.Delay(20000);
+                do
+                {
+                } while (tempVoiceChannel.Users.Count != 0);
+                await tempVoiceChannel.DeleteAsync();
+                await tempCategoryChannel.DeleteAsync();
+            }
+        }
+
+        /*
+        [Command("connect")]
+        public async Task startConnect()
+        {
+            await ConnectAudio();
+        }
+
+
+        public async Task<IAudioClient> ConnectAudio()
+        {
+            SocketGuildUser user = Context.User as SocketGuildUser; // Get the user who executed the command
+            IVoiceChannel channel = user.VoiceChannel;
+
+            bool shouldConnect = false;
+
+            if (channel == null) // Check if the user is in a channel
+            {
+                await Context.Message.Channel.SendMessageAsync("Please join a voice channel first.");
+            }
+            else
+            {
+                var clientUser = await Context.Channel.GetUserAsync(Context.Client.CurrentUser.Id); // Find the client's current user (I.e. this bot) in the channel the command was executed in
+                if (clientUser != null)
+                {
+                    if (clientUser is IGuildUser bot) // Cast the client user so we can access the VoiceChannel property
+                    {
+                        if (bot.VoiceChannel == null)
+                        {
+                            Console.WriteLine("Bot is not in any channels");
+                            shouldConnect = true;
+                        }
+                        else if (bot.VoiceChannel.Id == channel.Id)
+                        {
+                            Console.WriteLine($"Bot is already in requested channel: {bot.VoiceChannel.Name}");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Bot is in channel: {bot.VoiceChannel.Name}");
+                            shouldConnect = true;
+                        }
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Unable to find bot in server: {Context.Guild.Name}");
+                }
+            }
+
+            return (shouldConnect ? await channel.ConnectAsync() : null); // Return the IAudioClient or null if there was no need to connect
+        }
+        */
 
         [Command("newch")]
         [Summary("create a new channel")]
@@ -422,10 +578,8 @@ namespace DiscordBot.Modules
             {
                 try
                 {
-                    
                     switch (response.ToString())
                     {
-                        //Delete channel in a existing category
                         case "1":
                             var channelChannelExist = await CheckChannelExist();
                             if (channelChannelExist == null)
@@ -439,7 +593,6 @@ namespace DiscordBot.Modules
                                 await ReplyAndDeleteAsync($"{channelChecker} has been deleted", false, null, TimeSpan.FromSeconds(7));
                             }
                             break;
-                        //2. Delete category and its child
                         case "2":
                             var categoryNameChecker = await CategoryNameChecker();
                             if (categoryNameChecker == null)
@@ -453,7 +606,6 @@ namespace DiscordBot.Modules
                             await categoryNameChecker.DeleteAsync();
                             await ReplyAndDeleteAsync($"{categoryNameChecker} and its child has been deleted", false, null, TimeSpan.FromSeconds(7));
                             break;
-                        //3. Delete category only
                         case "3":
                             categoryNameChecker = await CategoryNameChecker();
                             if (categoryNameChecker == null)
@@ -497,7 +649,14 @@ namespace DiscordBot.Modules
             await Context.Channel.DeleteMessageAsync(channelName); 
             return channelName;
         }
-
+        private async Task<SocketMessage> CheckVoiceChannelName()
+        {
+            await ReplyAndDeleteAsync("Name of the new channel please?", false, null, TimeSpan.FromSeconds(7));
+            var channelName = await NextMessageAsync(true, true, TimeSpan.FromSeconds(7));
+            if (channelName == null) return null;
+            await Context.Channel.DeleteMessageAsync(channelName);
+            return channelName;
+        }
         private async Task<SocketMessage> CheckChannelTopic() 
         { 
             await ReplyAndDeleteAsync("Topic of the new channel please?", false, null, TimeSpan.FromSeconds(7)); 
