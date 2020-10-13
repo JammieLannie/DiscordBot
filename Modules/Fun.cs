@@ -69,10 +69,18 @@ namespace DiscordBot.Modules
         {
             try
             {
+                // kiss, hug, slap, cuddle, tickle, poke, pat
                 var author = Context.User;
                 var image = await NekosClient.GetSfwAsync(endpoint);
-                var fag = endpoint.ToString().ToLower().Replace("_", " ");
-                await ReplyAsync(null, false, new EmbedBuilder().WithDescription(user == null || author == user ? $"{author.Mention} {fag}s themselves ?" : $"{author.Mention} {fag}s {user.Mention}!").WithImageUrl(image.FileUrl).Build());
+                var fag = endpoint.ToString().ToLower()
+                    .Replace("kiss", "kissed")
+                    .Replace("hug", "hugged")
+                    .Replace("poke", "poked")
+                    .Replace("cuddle", "cuddled")
+                    .Replace("slap", "slapped")
+                    .Replace("pat", "patted")
+                    .Replace("tickle", "tickled");
+                await ReplyAsync(null, false, new EmbedBuilder().WithDescription(user == null || author == user ? $"{author.Mention} {fag} themselves ?" : $"{author.Mention} {fag} {user.Mention}!").WithImageUrl(image.FileUrl).Build());
             }
             catch {
                 await ReplyAndDeleteAsync("Error !!", false, null, TimeSpan.FromSeconds(5));

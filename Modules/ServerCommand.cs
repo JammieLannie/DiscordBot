@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
@@ -174,6 +173,7 @@ namespace DiscordBot.Modules
         [RequireBotPermission(GuildPermission.ManageChannels)]
         public async Task UnlockChannelRemote(SocketGuildChannel channel)
         {
+            Console.WriteLine(channel);
             if (!(Context.User is SocketGuildUser userSend)
                 || !userSend.GuildPermissions.ManageChannels)
             {
@@ -185,7 +185,6 @@ namespace DiscordBot.Modules
             var builder = new EmbedBuilder()
                 .WithDescription($"`Channel {channel} unlocked`");
             await ReplyAsync(null, false, builder.Build());
-
         }
 
 
@@ -380,14 +379,17 @@ namespace DiscordBot.Modules
                 categoryNameChecker = guild.CategoryChannels.FirstOrDefault(
                     c => c.Name == categoryName.ToString().ToLower())?.Id;
                 if (categoryNameChecker == null) return;
+                var categoryId = categoryNameChecker;
+                Console.WriteLine("Carry one pls");
                 var createNewChannel = await guild.CreateVoiceChannelAsync($"{voiceChannelName}",
-                    r => r.CategoryId = categoryNameChecker);
+                    r => r.CategoryId = categoryId);
                 await createNewChannel.ModifyAsync(r => {
                     r.UserLimit = 1;
                     r.Position = 0;
                     r.Bitrate = 96000;
                 });
                 var voiceId = createNewChannel.Id;
+                await Task.Delay(2000);
                 var tempVoiceChannel = Context.Guild.VoiceChannels.
                     FirstOrDefault(prop => prop.Id == voiceId);
                 if (tempVoiceChannel == null) return;

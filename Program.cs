@@ -1,4 +1,7 @@
-﻿namespace DiscordBot
+﻿using System.Threading.Tasks;
+using DiscordBot.Modules;
+
+namespace DiscordBot
 {
     internal class Program
     {

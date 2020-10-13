@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Addons.Interactive;
 using Discord.Commands;
+using Discord.Rest;
 using Discord.WebSocket;
+using DiscordBot.Modules;
 using DiscordBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -59,11 +61,13 @@ namespace DiscordBot
                 {
                     LogLevel = LogSeverity.Verbose,
                     DefaultRunMode = RunMode.Async,
-                    CaseSensitiveCommands = false
+                    CaseSensitiveCommands = false,
+                    IgnoreExtraArgs = true
                 }))
                 .AddSingleton<CommandHandler>()
                 .AddSingleton<StartupService>()
                 .AddSingleton<InteractiveService>()
+                .AddSingleton<ServerCommand>()
                 //.AddSingleton<OsuService>(new OsuClient(new OsuSharpConfiguration
                 //{
                 //    ApiKey = 
