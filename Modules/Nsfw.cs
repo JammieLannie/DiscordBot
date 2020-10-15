@@ -10,7 +10,7 @@ using Nekos.Net.Endpoints;
 namespace DiscordBot.Modules
 {
     [Summary(":sa:")]
-    public class Nsfw : InteractiveBase
+    public class Nsfw : InteractiveBase<SocketCommandContext>
     {
         [Command("switch")]
         [Summary("Enable or disable nsfw")]

@@ -13,7 +13,7 @@ using Nekos.Net.Endpoints;
 namespace DiscordBot.Modules
 {
     [Summary(":satellite:")]
-    public class Fun : InteractiveBase
+    public class Fun : InteractiveBase<SocketCommandContext>
     {
 
         [Command("poke")]

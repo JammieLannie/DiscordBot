@@ -11,7 +11,7 @@ using Discord.WebSocket;
 namespace DiscordBot.Modules
 {
     [Summary(":shield:")]
-    public class Moderation : InteractiveBase
+    public class Moderation : InteractiveBase<SocketCommandContext>
     {
         [Command("voice")]
         [Description("toggle mute state")]
@@ -65,10 +65,7 @@ namespace DiscordBot.Modules
             foreach (var channels in voiceChannel)
             {
                 foreach (var toggleUser in channels.Users)
-                {
-                    if (toggleUser == user)
-                        await user.VoiceChannel.DisconnectAsync();
-                }
+                    if (toggleUser == user) await user.VoiceChannel.DisconnectAsync();
             }
         }
 

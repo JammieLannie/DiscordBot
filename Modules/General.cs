@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
@@ -11,19 +10,22 @@ using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 
+
 namespace DiscordBot.Modules
 {
     [Summary(":woman_in_motorized_wheelchair:")]
     public class General : ModuleBase
     {
+        
         private readonly CommandService _commands;
-        private readonly IConfigurationRoot _config;
+        private readonly IConfiguration _config;
 
-        public General(CommandService commands, IConfigurationRoot config)
+        public General(CommandService commands, IConfiguration config)
         {
             _commands = commands;
             _config = config;
         }
+        
 
         [Command("ping", true)]
         [Summary("Get bot latency in ms")]
@@ -33,7 +35,7 @@ namespace DiscordBot.Modules
             await Context.Channel.SendMessageAsync("Bonk bonk the bot with " + Context.Message.CreatedAt.Millisecond +
                                                    "ms");
         }
-
+        
         [Command("help", true)]
         [Alias("help me")]
         public async Task Help([Remainder] string arg = null)
@@ -79,7 +81,7 @@ namespace DiscordBot.Modules
                     .WithFooter(m.Commands.Count + " commands", Context.Client.CurrentUser.GetAvatarUrl());
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
-
+        
         [Command("info", true)]
         [Summary("Get your information")]
         public async Task Info(IGuildUser user = null)
@@ -140,7 +142,6 @@ namespace DiscordBot.Modules
                 builder.AddField("Answer", $"{replies[new Random().Next(replies.Length - 1)]}");
             await Context.Channel.SendMessageAsync(null, false, builder.Build());
         }
-
 
         [Command("reddit", true)]
         [Alias("reddit")]
